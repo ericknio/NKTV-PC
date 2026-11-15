@@ -1,0 +1,213 @@
+@for (application of renderedApplications(); track application.token) {
+    @if (application.binding; as binding) {
+        @if (binding.target === 'videojs') {
+            @defer (on immediate) {
+                @if (vjsOptions(); as options) {
+                    <app-vjs-player
+                        [options]="options"
+                        [fullscreenTarget]="fullscreenSurface"
+                        [mediaTitle]="resolvedMediaTitle()"
+                        [upNext]="upNext()"
+                        [timelineSegments]="timelineSegments()"
+                        [volume]="volume()"
+                        [showCaptions]="showCaptions()"
+                        [interactionEnabled]="playbackInteractionEnabled()"
+                        [startTime]="effectiveStartTime()"
+                        [seriesNavigation]="seriesNavigation()"
+                        (timeUpdate)="handleTimeUpdate($event, application)"
+                        (playbackIssue)="handlePlaybackIssue($event, binding)"
+                        (playbackStarted)="handlePlaybackStarted(binding)"
+                        (retryRequested)="retryPlayback(binding)"
+                        (playbackEnded)="handleActivityEnded(application)"
+                        (previousEpisodeRequested)="
+                            previousEpisodeRequested.emit()
+                        "
+                        (nextEpisodeRequested)="nextEpisodeRequested.emit()"
+                    />
+                }
+            } @placeholder {
+                <div
+                    class="web-player-defer-placeholder"
+                    aria-hidden="true"
+                ></div>
+            }
+        } @else if (binding.target === 'html5') {
+            @defer (on immediate) {
+                @if (channel(); as channel) {
+                    <app-html-video-player
+                        [channel]="$any(channel)"
+                        [fullscreenTarget]="fullscreenSurface"
+                        [mediaTitle]="resolvedMediaTitle()"
+                        [upNext]="upNext()"
+                        [timelineSegments]="timelineSegments()"
+                        [volume]="volume()"
+                        [showCaptions]="showCaptions()"
+                        [isLive]="resolvedIsLive()"
+                        [interactionEnabled]="playbackInteractionEnabled()"
+                        [startTime]="effectiveStartTime()"
+                        [seriesNavigation]="seriesNavigation()"
+                        (timeUpdate)="handleTimeUpdate($event, application)"
+                        (playbackIssue)="handlePlaybackIssue($event, binding)"
+                        (playbackStarted)="handlePlaybackStarted(binding)"
+                        (playbackEnded)="handleActivityEnded(application)"
+                        (previousEpisodeRequested)="
+                            previousEpisodeRequested.emit()
+                        "
+                        (nextEpisodeRequested)="nextEpisodeRequested.emit()"
+                    />
+                }
+            } @placeholder {
+                <div
+                    class="web-player-defer-placeholder"
+                    aria-hidden="true"
+                ></div>
+            }
+        } @else if (binding.target === 'artplayer') {
+            @defer (on immediate) {
+                @if (channel(); as channel) {
+                    <app-art-player
+                        [channel]="$any(channel)"
+                        [fullscreenTarget]="fullscreenSurface"
+                        [mediaTitle]="resolvedMediaTitle()"
+                        [upNext]="upNext()"
+                        [timelineSegments]="timelineSegments()"
+                        [volume]="volume()"
+                        [showCaptions]="showCaptions()"
+                        [isLive]="resolvedIsLive()"
+                        [interactionEnabled]="playbackInteractionEnabled()"
+                        [startTime]="effectiveStartTime()"
+                        [seriesNavigation]="seriesNavigation()"
+                        (timeUpdate)="handleTimeUpdate($event, application)"
+                        (playbackIssue)="handlePlaybackIssue($event, binding)"
+                        (playbackStarted)="handlePlaybackStarted(binding)"
+                        (playbackEnded)="handleActivityEnded(application)"
+                        (previousEpisodeRequested)="
+                            previousEpisodeRequested.emit()
+                        "
+                        (nextEpisodeRequested)="nextEpisodeRequested.emit()"
+                    />
+                }
+            } @placeholder {
+                <div
+                    class="web-player-defer-placeholder"
+                    aria-hidden="true"
+                ></div>
+            }
+        }
+    } @else if (application.embeddedMpv) {
+        <div
+            class="embedded-mpv-pair"
+            [class.embedded-mpv-pair--swapped]="companion.swapped()"
+            [class.embedded-mpv-pair--side-by-side]="
+                companion.layout() === 'side-by-side'
+            "
+            [class.embedded-mpv-pair--grid]="companion.layout() === 'grid'"
+            [class.embedded-mpv-pair--with-strip]="companion.stripVisible()"
+            [attr.data-multiview-stage]="companion.stripVisible() ? '' : null"
+            [attr.role]="companion.stripVisible() ? 'group' : null"
+            [attr.tabindex]="
+                companion.layout() === 'grid'
+                    ? 0
+                    : companion.stripVisible()
+                      ? -1
+                      : null
+            "
+            [attr.aria-label]="
+                companion.stripVisible()
+                    ? ('TWO_STREAMS.MULTIVIEW' | translate)
+                    : null
+            "
+            (keydown)="companion.selectControlsFromKey($event)"
+            [style.--pip-left.px]="companion.placement.geometry().left"
+            [style.--pip-top.px]="companion.placement.geometry().top"
+            [style.--pip-width.px]="companion.placement.geometry().width"
+            [style.--pip-height.px]="companion.placement.geometry().height"
+        >
+            <app-embedded-mpv-player
+                #embeddedMpvPlayer
+                data-multiview-slot="1"
+                [canOpenMultiview]="
+                    companion.available() && !companion.stripVisible()
+                "
+                (multiviewAddRequested)="
+                    companion.focus.pick(companion.openPicker(2))
+                "
+                (multiviewGridRequested)="
+                    companion.setLayout('grid'); companion.focus.enterGrid()
+                "
+                [appSecondStreamFloating]="companion.swapped()"
+                [class.embedded-mpv-player-host--selected]="
+                    (companion.layout() === 'grid' ||
+                        companion.layout() === 'side-by-side') &&
+                    companion.controlsSlot() === 1
+                "
+                [showControls]="
+                    !companion.busy() && companion.controlsSlot() === 1
+                "
+                [sharedVolumeController]="companion.audioController()"
+                (inactiveSurfaceClicked)="companion.selectControls(1)"
+                [initialVolumeOverride]="
+                    companion.audioSlot() !== 1
+                        ? 0
+                        : companion.stripVisible() || companion.error()
+                          ? companion.audibleVolume()
+                          : null
+                "
+                [retryEnabled]="!companion.busy()"
+                [(liveSubtitlesOff)]="embeddedMpvLiveSubtitlesOff"
+                [playback]="resolvedPlayback()"
+                [fullscreenTarget]="fullscreenSurface"
+                [mediaTitle]="resolvedMediaTitle()"
+                [upNext]="companion.active() ? null : upNext()"
+                [timelineSegments]="timelineSegments()"
+                [recordingFolder]="recordingFolder()"
+                [recordingMetadata]="recordingMetadata()"
+                [seriesNavigation]="seriesNavigation()"
+                (timeUpdate)="handleTimeUpdate($event, application)"
+                (playbackEnded)="
+                    handleActivityEnded(application, !companion.active())
+                "
+                (previousEpisodeRequested)="previousEpisodeRequested.emit()"
+                (nextEpisodeRequested)="nextEpisodeRequested.emit()"
+                (recordingStopped)="recordingStopped.emit($event)"
+            />
+            <app-second-stream
+                #companion
+                [class.second-stream--tiled]="
+                    companion.layout() === 'side-by-side' ||
+                    companion.layout() === 'grid'
+                "
+                [primary]="embeddedMpvPlayer"
+                [fullscreenTarget]="fullscreenSurface"
+                (recordingStopped)="recordingStopped.emit($event)"
+            />
+        </div>
+    }
+}
+
+<!-- Sibling of the engine, inside the fullscreen host: survives the engine
+     remount a channel switch causes and stays visible in fullscreen. Off for
+     native-view Embedded MPV, which paints above the DOM. -->
+<app-fullscreen-channel-panel
+    [stage]="fullscreenSurface"
+    [enabled]="channelPanelAvailable()"
+/>
+
+@if (visiblePlaybackDiagnostic(); as issue) {
+    <app-playback-diagnostic-panel
+        [diagnostic]="issue"
+        [recommendations]="recommendations()"
+        [playback]="resolvedPlayback()"
+        [supportsManagedExternalPlayers]="
+            runtime.supportsManagedExternalPlayers
+        "
+        [playbackExternallyTransferable]="playbackExternallyTransferable()"
+        [alternativeSources]="alternativeSources()"
+        [externalStates]="externalRecoveryState()"
+        [pending]="recoveryPending()"
+        (retryRequested)="retryPlayback()"
+        (playerRequested)="requestRecommendedPlayer($event)"
+        (alternativeSourceRequested)="alternativeSourceRequested.emit($event)"
+        (sourceCheckRequested)="sourceCheckRequested.emit($event)"
+    />
+}

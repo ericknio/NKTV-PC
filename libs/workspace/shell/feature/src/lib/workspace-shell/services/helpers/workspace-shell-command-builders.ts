@@ -123,7 +123,7 @@ export function getPlaylistCommandDefinitions(
             descriptionKey:
                 'WORKSPACE.SHELL.COMMANDS.PLAYLIST_INFO_DESCRIPTION',
             priority: 30,
-            visible: ctx.hasActivePlaylist,
+            visible: false,
             run: () => ctx.actions.openPlaylistInfo(),
         },
         {
@@ -246,7 +246,7 @@ export function getGlobalCommandDefinitions(
             labelKey: 'WORKSPACE.SHELL.COMMANDS.OPEN_SOURCES_LABEL',
             descriptionKey: 'WORKSPACE.SHELL.COMMANDS.OPEN_SOURCES_DESCRIPTION',
             priority: 60,
-            visible: route.kind !== 'sources',
+            visible: false,
             run: () => {
                 void ctx.router.navigate(['/workspace', 'sources']);
             },
@@ -271,6 +271,7 @@ export function getGlobalCommandDefinitions(
             labelKey: 'WORKSPACE.SHELL.COMMANDS.ADD_PLAYLIST_LABEL',
             descriptionKey: 'WORKSPACE.SHELL.COMMANDS.ADD_PLAYLIST_DESCRIPTION',
             priority: 80,
+            visible: false,
             run: () => actions.openAddPlaylistDialog(),
         },
         {
@@ -282,6 +283,7 @@ export function getGlobalCommandDefinitions(
                 'WORKSPACE.SHELL.COMMANDS.ADD_PLAYLIST_M3U_DESCRIPTION',
             keywords: ['m3u', 'm3u8', 'file', 'url', 'add', 'import'],
             priority: 79,
+            visible: false,
             run: () => actions.openAddPlaylistDialog('url'),
         },
         {
@@ -293,6 +295,7 @@ export function getGlobalCommandDefinitions(
                 'WORKSPACE.SHELL.COMMANDS.ADD_PLAYLIST_XTREAM_DESCRIPTION',
             keywords: ['xtream', 'codes', 'iptv', 'add', 'import'],
             priority: 78,
+            visible: false,
             run: () => actions.openAddPlaylistDialog('xtream'),
         },
         {
@@ -304,6 +307,7 @@ export function getGlobalCommandDefinitions(
                 'WORKSPACE.SHELL.COMMANDS.ADD_PLAYLIST_STALKER_DESCRIPTION',
             keywords: ['stalker', 'portal', 'mac', 'ministra', 'add'],
             priority: 77,
+            visible: false,
             run: () => actions.openAddPlaylistDialog('stalker'),
         },
     ];

@@ -70,21 +70,10 @@ export class WorkspaceSourcesFiltersPanelComponent {
     );
 
     readonly typeOptions: readonly TypeOption[] = [
-        { id: 'all', icon: 'layers', labelKey: 'WORKSPACE.SOURCES.ALL' },
-        {
-            id: 'm3u',
-            icon: SOURCE_TYPE_ICONS.m3u,
-            labelKey: 'HOME.PLAYLIST_TYPES.M3U',
-        },
         {
             id: 'xtream',
             icon: SOURCE_TYPE_ICONS.xtream,
             labelKey: 'HOME.PLAYLIST_TYPES.XTREAM',
-        },
-        {
-            id: 'stalker',
-            icon: SOURCE_TYPE_ICONS.stalker,
-            labelKey: 'HOME.PLAYLIST_TYPES.STALKER',
         },
     ];
     readonly statusOptions: readonly StatusOption[] = [
@@ -102,7 +91,10 @@ export class WorkspaceSourcesFiltersPanelComponent {
     private readonly playlists = computed(() => {
         const pending = this.removal.pendingIds();
         return this.allPlaylists().filter(
-            (playlist) => !pending.has(playlist._id)
+            (playlist) =>
+                !pending.has(playlist._id) &&
+                !!playlist.serverUrl &&
+                !playlist.macAddress
         );
     });
     private readonly bucketOf: SourceBucketOf = (playlist) => {

@@ -199,22 +199,7 @@
                             "
                         />
                     }
-                    @if (playlist.serverUrl) {
-                        <mat-form-field class="w-full">
-                            <mat-label>{{
-                                'HOME.PLAYLISTS.INFO_DIALOG.SERVER_URL'
-                                    | translate
-                            }}</mat-label>
-                            <input matInput formControlName="serverUrl" />
-                            <mat-hint>{{
-                                'HOME.XTREAM_PLAYLIST.URL_HINT' | translate
-                            }}</mat-hint>
-                            <mat-error>{{
-                                'HOME.XTREAM_PLAYLIST.URL_VALIDATION_ERROR'
-                                    | translate
-                            }}</mat-error>
-                        </mat-form-field>
-                    }
+                        <input type="hidden" formControlName="serverUrl" />
                     @if (!playlist.portalUrl) {
                         <ng-container
                             [ngTemplateOutlet]="providerCredentials"

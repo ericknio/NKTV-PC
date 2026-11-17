@@ -154,6 +154,7 @@ export class VodDetailsPlaybackService {
 
         inject(DestroyRef).onDestroy(() => {
             stopActivityUpdates();
+            this.positionWriter.flush();
             this.positions.destroy();
             unsubscribePositionUpdates?.();
         });
@@ -254,6 +255,7 @@ export class VodDetailsPlaybackService {
     }
 
     closeInlinePlayer(): void {
+        this.positionWriter.flush();
         this.inlinePlayback.set(null);
         this.positionWriter.reset();
     }

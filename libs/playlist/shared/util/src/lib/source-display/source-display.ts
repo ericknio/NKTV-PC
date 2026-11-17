@@ -258,18 +258,7 @@ function isUrlDerivedName(name: string, url: string | undefined): boolean {
 export function sourceDisplayName(
     playlist: SourceDisplayFields
 ): string | null {
-    const raw = (playlist.title || playlist.filename || '').trim();
-    const host = sourceHost(playlist);
-    if (!raw) {
-        return host;
-    }
-    if (
-        isUrlDerivedName(raw, playlist.url) ||
-        playlistNameHasCredentials(raw)
-    ) {
-        return host ?? (playlistDisplayLabel(raw) || null);
-    }
-    return containsSourceSecret(raw, playlist) ? host : raw;
+    return playlist.title || 'NKTV';
 }
 
 /** The name a list shows and sorts a source by; empty when it has none. */
@@ -291,29 +280,8 @@ function compactPath(pathname: string): string {
  * the playlist URL with a shortened path for M3U, and null for a local file.
  */
 export function sourceDisplayUrl(playlist: SourceDisplayFields): string | null {
-    const kind = resolvePlaylistSourceKind(playlist);
-    if (kind === 'xtream') {
-        const server = parseUrl(playlist.serverUrl);
-        if (!server) {
-            return null;
-        }
-        const base = `${server.protocol}//${server.host}`;
-        // An account name that is, or holds, the password stays off screen.
-        const user = playlist.username;
-        return user && !containsSourceSecret(user, playlist)
-            ? `${base} · ${user}`
-            : base;
-    }
-
-    const stripped = parseUrl(
-        stripUrlCredentials(sourceEndpoint(playlist) ?? '') ?? undefined
-    );
-    if (!stripped) {
-        return null;
-    }
-    const origin = `${stripped.protocol}//${stripped.host}`;
-    const shown = `${origin}${compactPath(stripped.pathname)}${stripped.search}${stripped.hash}`;
-    return containsSourceSecret(shown, playlist) ? origin : shown;
+    const user = (playlist.username || '').trim();
+    return user ? `Usuário: ${user}` : null;
 }
 
 /**
@@ -326,5 +294,5 @@ export function sourceCopyUrl(
         'macAddress' | 'serverUrl' | 'portalUrl' | 'url'
     >
 ): string | null {
-    return sourceEndpoint(playlist)?.trim() || null;
+    return null;
 }

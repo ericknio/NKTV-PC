@@ -403,6 +403,14 @@ export class WorkspaceContextPanelComponent {
     readonly filteredXtreamCategories = computed(() => {
         this.languageTick();
         const cats = this.xtreamCategories();
+        const section = this.section();
+        const continueWatchingCount =
+            section === 'vod'
+                ? this.xtreamStore.continueWatchingVodCount()
+                : section === 'series'
+                  ? this.xtreamStore.continueWatchingSeriesCount()
+                  : 0;
+
         const term = foldSearchText(this.categorySearchTerm().trim());
         const filtered = term
             ? cats.filter((category) =>
@@ -410,12 +418,28 @@ export class WorkspaceContextPanelComponent {
               )
             : cats;
 
-        return sortPortalCategoryItems(
+        const sorted = sortPortalCategoryItems(
             filtered,
             this.categorySortMode(),
             (category) => this.getCategoryLabel(category),
             (category) => this.isAllCategory(category)
         );
+
+        if (continueWatchingCount > 0 && !term) {
+            return [
+                {
+                    category_id: -100,
+                    id: -100,
+                    category_name: this.translate.instant(
+                        'WORKSPACE.CONTINUE_WATCHING'
+                    ),
+                    labelKey: 'WORKSPACE.CONTINUE_WATCHING',
+                } as any,
+                ...sorted,
+            ];
+        }
+
+        return sorted;
     });
 
     readonly filteredStalkerCategories = computed(() => {

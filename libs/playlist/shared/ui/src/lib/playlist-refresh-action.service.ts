@@ -92,13 +92,20 @@ export class PlaylistRefreshActionService {
         return this.isRefreshing() || this.activity.isBusy(playlistId);
     }
 
-    refresh(playlist: PlaylistMeta): void {
+    refresh(playlist: PlaylistMeta, confirm = true): void {
         if (this.isBlocked(playlist._id)) {
             return;
         }
 
         if (playlist.serverUrl && this.runtime.supportsXtreamSqliteDataSource) {
-            this.refreshXtream(playlist);
+            if (confirm) {
+                this.refreshXtream(playlist);
+            } else {
+                void this.xtreamRefreshFlow.refreshDirectly(
+                    playlist,
+                    this.xtreamRefreshReporter
+                );
+            }
         } else if (
             this.runtime.supportsPlaylistRefresh &&
             (playlist.url || playlist.filePath)

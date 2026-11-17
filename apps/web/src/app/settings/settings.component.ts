@@ -388,7 +388,7 @@ export class SettingsComponent
         void this.embeddedMpv.load();
         this.appUpdate.checkAppVersion();
         this.appUpdate.init();
-        void this.remoteControl.fetchLocalIpAddresses();
+        // void this.remoteControl.fetchLocalIpAddresses();
 
         this.settingsCtx.setSections(this.sectionNav);
     }

@@ -7,10 +7,7 @@ export class AppMaintenanceService {
     private readonly router = inject(Router);
 
     get canCheckForUpdates(): boolean {
-        return (
-            typeof window.electron?.checkForAppUpdate === 'function' &&
-            typeof window.electron?.getAppUpdateStatus === 'function'
-        );
+        return false;
     }
 
     openSettings(): Promise<boolean> {

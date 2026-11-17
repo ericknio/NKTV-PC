@@ -146,6 +146,13 @@ export class XtreamRefreshFlowService {
         });
     }
 
+    refreshDirectly(
+        item: PlaylistMeta,
+        reporter: XtreamRefreshProgressReporter
+    ): Promise<void> {
+        return this.runRefresh(item, reporter);
+    }
+
     private async runRefresh(
         item: PlaylistMeta,
         reporter: XtreamRefreshProgressReporter

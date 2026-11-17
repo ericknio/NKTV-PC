@@ -41,7 +41,7 @@ export type ReleaseFetcher = (
 ) => Promise<ReleaseFetchResponse>;
 
 export function normalizeVersion(value: string | null | undefined): string {
-    return (value ?? '').trim().replace(/^v/i, '');
+    return (value ?? '').trim().replace(/\/latest$/i, '').replace(/^v/i, '');
 }
 
 function isGitHubRelease(value: unknown): value is GitHubReleaseResponse {

@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { catchError, map } from 'rxjs';
+import { catchError, map, of } from 'rxjs';
 
 const PRERELEASE_KEYWORDS = [
     'beta',
@@ -20,7 +20,7 @@ interface ParsedVersion {
 }
 
 function parseVersion(input: string): ParsedVersion | null {
-    const normalized = input.trim().replace(/^v/i, '');
+    const normalized = input.trim().replace(/\/latest$/i, '').replace(/^v/i, '');
     const match = normalized.match(
         /(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:[-+]?([0-9A-Za-z.-]+))?/
     );
@@ -57,41 +57,30 @@ export class SettingsAppVersionService {
     private readonly http = inject(HttpClient);
 
     /**
-     * Returns the version of the released app
-     * Filters out pre-release versions (beta, alpha, rc)
+     * Returns the version of the released app from GitHub
      */
     getAppVersion() {
         return this.http
-            .get<{ created_at: string; name: string }[]>(
-                'https://api.github.com/repos/4gray/iptvnator/releases'
+            .get<{ created_at: string; name: string; tag_name: string }[]>(
+                'https://api.github.com/repos/ericknio/NKTV-PC/releases'
             )
             .pipe(
                 map((response) => {
-                    // Filter out pre-release versions (beta, alpha, rc, etc.)
-                    const stableReleases = response.filter((release) => {
-                        if (hasPrereleaseKeyword(release.name)) {
-                            return false;
-                        }
-
-                        const version = parseVersion(release.name);
-                        if (!version) return false;
-
-                        return !version.prerelease;
-                    });
-
-                    // Sort stable releases by creation date
-                    const sortedReleases = stableReleases.sort(
+                    if (!Array.isArray(response) || response.length === 0) {
+                        return '1.0.2';
+                    }
+                    const sortedReleases = [...response].sort(
                         (a, b) =>
                             new Date(b.created_at).getTime() -
                             new Date(a.created_at).getTime()
                     );
-
-                    return sortedReleases[0];
+                    const latest = sortedReleases[0];
+                    const rawVersion = latest.tag_name || latest.name || '1.0.2';
+                    return rawVersion.replace(/\/latest$/i, '').replace(/^v/i, '');
                 }),
-                map((response) => response.name),
                 catchError((err) => {
-                    console.error(err);
-                    throw new Error(err);
+                    console.error('Failed to fetch latest version from GitHub:', err);
+                    return of('1.0.2');
                 })
             );
     }

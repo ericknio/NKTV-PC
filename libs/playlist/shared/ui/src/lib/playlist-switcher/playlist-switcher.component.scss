@@ -25,6 +25,12 @@
     app-region: no-drag;
     transition: background 0.12s ease;
 
+    &.is-brand-only {
+        cursor: default;
+        pointer-events: none;
+        user-select: none;
+    }
+
     &:hover {
         background: color-mix(in srgb, var(--app-on-surface) 16%, transparent);
     }

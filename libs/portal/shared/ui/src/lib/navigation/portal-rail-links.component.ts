@@ -40,7 +40,7 @@ export class PortalRailLinksComponent {
             .map((segment) => String(segment))
             .join('/');
         if (normalizedPath.includes('/workspace/sources')) {
-            return 'playlist_play';
+            return 'person';
         }
 
         return link.icon;

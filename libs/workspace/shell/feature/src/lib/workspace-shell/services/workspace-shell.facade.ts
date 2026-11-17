@@ -73,19 +73,9 @@ export class WorkspaceShellFacade {
         if (key === 'k') {
             event.preventDefault();
             this.openCommandPalette();
-        } else if (
-            key === 'p' &&
-            !event.shiftKey &&
-            !event.altKey &&
-            this.playlistSwitcher.available &&
-            // An open dialog keeps the focus: the switcher would take it out
-            // of the dialog, and give it back to the toolbar behind it.
-            this.dialog.openDialogs.length === 0
-        ) {
-            // ⌘K stays the command palette; ⌘P is the playlist switcher (and
-            // no longer prints the page in the browser build).
+        } else if (key === 'p' && (event.ctrlKey || event.metaKey)) {
+            // Disabled in NKTV
             event.preventDefault();
-            this.playlistSwitcher.request();
         }
     };
 

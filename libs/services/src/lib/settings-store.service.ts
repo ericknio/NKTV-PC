@@ -56,7 +56,7 @@ export const SettingsStore = signalStore(
          * not duplicated per call-site.
          */
         resolvedEpgViewMode: computed<EpgViewMode>(
-            () => store.epgViewMode?.() ?? 'timeline'
+            () => store.epgViewMode?.() ?? 'list'
         ),
         resolvedEpgOffsetMinutes: computed(() =>
             normalizeEpgOffsetMinutes(store.epgOffsetMinutes?.())

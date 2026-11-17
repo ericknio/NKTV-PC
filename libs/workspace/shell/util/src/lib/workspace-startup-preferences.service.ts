@@ -16,29 +16,49 @@ export class WorkspaceStartupPreferencesService {
     async resolveInitialWorkspacePath(): Promise<string> {
         await this.settingsStore.loadSettings();
 
-        const showDashboard = this.showDashboard();
-        const firstViewPath = this.getFirstAvailableWorkspacePath(showDashboard);
+        try {
+            const playlists = await firstValueFrom(
+                this.playlistsService.getAllPlaylists()
+            );
+            const nktv = playlists.find((p) => !!p.serverUrl);
+            if (!nktv) {
+                return '/login';
+            }
 
-        if (this.startupBehavior() !== StartupBehavior.RestoreLastView) {
-            return firstViewPath;
+            const showDashboard = this.showDashboard();
+            if (this.startupBehavior() === StartupBehavior.RestoreLastView) {
+                const restorable = await this.getValidatedLastRestorablePath(showDashboard);
+                if (restorable) return restorable;
+            }
+
+            return `/workspace/xtreams/${nktv._id}/live`;
+        } catch {
+            return '/login';
         }
-
-        return (
-            (await this.getValidatedLastRestorablePath(showDashboard)) ??
-            firstViewPath
-        );
     }
 
     async resolveDashboardPath(): Promise<string> {
         await this.settingsStore.loadSettings();
 
+        try {
+            const playlists = await firstValueFrom(
+                this.playlistsService.getAllPlaylists()
+            );
+            const nktv = playlists.find((p) => !!p.serverUrl);
+            if (nktv) {
+                return `/workspace/xtreams/${nktv._id}/live`;
+            }
+        } catch {
+            // fallback
+        }
+
         return this.showDashboard()
             ? '/workspace/dashboard'
-            : '/workspace/sources';
+            : '/workspace';
     }
 
     getFirstAvailableWorkspacePath(showDashboard = this.showDashboard()): string {
-        return showDashboard ? '/workspace/dashboard' : '/workspace/sources';
+        return '/login';
     }
 
     showDashboard(): boolean {
@@ -86,7 +106,7 @@ export class WorkspaceStartupPreferencesService {
             case 'global-recent':
                 return '/workspace/global-recent';
             case 'sources':
-                return '/workspace/sources';
+                return null;
             case 'portal':
                 if (!route.context || !route.section) {
                     return null;

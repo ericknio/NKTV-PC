@@ -26,7 +26,7 @@ export class XtreamFullEpgService {
     ): Promise<EpgItem[]> {
         options?.signal?.throwIfAborted();
         const preferUploaded =
-            this.settings.preferUploadedEpgOverXtream?.() ?? false;
+            this.settings.preferUploadedEpgOverXtream?.() ?? true;
         if (this.runtime.supportsEpgMapping && id) {
             try {
                 const mapping = await window.electron?.getEpgMapping?.(

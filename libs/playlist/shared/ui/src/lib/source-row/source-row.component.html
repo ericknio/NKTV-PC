@@ -165,6 +165,17 @@
             <button
                 mat-icon-button
                 type="button"
+                class="source-row__action source-row__delete"
+                [disabled]="busy() || !removable()"
+                (click)="$event.stopPropagation(); removeRequested.emit()"
+                [matTooltip]="'HOME.PLAYLISTS.REMOVE' | translate"
+                [attr.aria-label]="'HOME.PLAYLISTS.REMOVE' | translate"
+            >
+                <mat-icon>delete</mat-icon>
+            </button>
+            <button
+                mat-icon-button
+                type="button"
                 class="source-row__action source-row__more"
                 [disabled]="busy()"
                 [matMenuTriggerFor]="menu"

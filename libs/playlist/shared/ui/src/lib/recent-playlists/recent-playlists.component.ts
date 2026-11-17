@@ -116,11 +116,14 @@ export class RecentPlaylistsComponent {
         return filter.type !== 'all' || filter.status !== 'all';
     });
 
-    /** Every source except those whose delete is pending. */
+    /** Every source except those whose delete is pending, keeping only Xtream credentials accounts. */
     readonly playlists = computed(() => {
         const pending = this.removal.pendingIds();
         return this.allPlaylists().filter(
-            (playlist) => !pending.has(playlist._id)
+            (playlist) =>
+                !pending.has(playlist._id) &&
+                !!playlist.serverUrl &&
+                !playlist.macAddress
         );
     });
 

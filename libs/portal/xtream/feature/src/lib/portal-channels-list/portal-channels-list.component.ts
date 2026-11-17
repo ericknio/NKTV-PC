@@ -46,6 +46,7 @@ import {
 import {
     createLogger,
     getXtreamCatchupDays,
+    groupChannelsByQuality,
     isXtreamCatchupAvailable,
     PortalChannelSortMode,
     sortPortalChannelItems,
@@ -87,6 +88,10 @@ export interface XtreamChannelListItem {
     readonly epg_channel_id?: string | null;
     readonly tv_archive?: number | null;
     readonly tv_archive_duration?: number | string | null;
+    readonly variants?: readonly XtreamChannelListItem[];
+    readonly qualityLabel?: string;
+    readonly qualityRank?: number;
+    readonly groupKey?: string;
 }
 
 interface XtreamCategoryLike {
@@ -157,11 +162,11 @@ export class PortalChannelsListComponent implements AfterViewInit, OnDestroy {
         this.xtreamStore.selectedTypeContentLoading;
     readonly channels = computed(() => {
         const override = this.channelsOverride();
-        if (Array.isArray(override)) {
-            return override;
-        }
+        const rawList = Array.isArray(override)
+            ? override
+            : (this.xtreamStore.selectItemsFromSelectedCategory() as XtreamChannelListItem[]);
 
-        return this.xtreamStore.selectItemsFromSelectedCategory() as XtreamChannelListItem[];
+        return groupChannelsByQuality(rawList);
     });
     readonly sortedChannels = computed(() => {
         const mode = this.sortMode();
@@ -325,6 +330,26 @@ export class PortalChannelsListComponent implements AfterViewInit, OnDestroy {
 
     trackBy(_index: number, item: XtreamChannelListItem | XtreamItem) {
         return item.xtream_id;
+    }
+
+    isChannelSelected(item: XtreamChannelListItem): boolean {
+        const selectedId = this.xtreamStore.selectedItem()?.xtream_id;
+        if (!selectedId) return false;
+        if (item.xtream_id === selectedId) return true;
+        return item.variants?.some((v) => v.xtream_id === selectedId) ?? false;
+    }
+
+    getChannelDisplayName(item: XtreamChannelListItem): string {
+        const base = item.title || item.name || '';
+        if (item.variants && item.variants.length > 1) {
+            const labels = item.variants
+                .map((v) => v.qualityLabel)
+                .filter((l): l is string => Boolean(l && l !== 'Padrão'));
+            if (labels.length > 1) {
+                return `${base} (${labels.join(' · ')})`;
+            }
+        }
+        return base;
     }
 
     protected readonly isCatchupAvailable = isXtreamCatchupAvailable;

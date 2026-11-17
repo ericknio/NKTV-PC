@@ -125,7 +125,9 @@ export class WorkspaceSourcesComponent {
     );
     private readonly playlists = computed(() => {
         const pending = this.removal.pendingIds();
-        return this.allPlaylists().filter((p) => !pending.has(p._id));
+        return this.allPlaylists().filter(
+            (p) => !pending.has(p._id) && !!p.serverUrl && !p.macAddress
+        );
     });
     private readonly bucketOf: SourceBucketOf = (playlist) => {
         const status = this.statusService.statusOf(playlist);

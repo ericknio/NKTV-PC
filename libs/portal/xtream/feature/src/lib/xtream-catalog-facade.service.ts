@@ -46,8 +46,12 @@ export class XtreamCatalogFacadeService implements PortalCatalogFacade<
     readonly isPaginatedContentLoading =
         this.xtreamStore.isPaginatedContentLoading;
     readonly selectedCategoryTitle = computed(() => {
-        if (!this.xtreamStore.selectedCategoryId()) {
+        const selectedId = this.xtreamStore.selectedCategoryId();
+        if (!selectedId) {
             return null;
+        }
+        if (Number(selectedId) === -100) {
+            return 'WORKSPACE.CONTINUE_WATCHING';
         }
         const category = this.selectedCategory();
         return String(
@@ -56,6 +60,18 @@ export class XtreamCatalogFacadeService implements PortalCatalogFacade<
                 category?.['category_name'] ??
                 ''
         );
+    });
+    readonly continueWatchingItems = computed<
+        readonly Record<string, unknown>[]
+    >(() => {
+        const type = this.contentType();
+        if (type === 'vod') {
+            return this.xtreamStore.continueWatchingVod() as any;
+        }
+        if (type === 'series') {
+            return this.xtreamStore.continueWatchingSeries() as any;
+        }
+        return [];
     });
     readonly categoryItemCount = computed(
         () => this.xtreamStore.selectItemsFromSelectedCategory().length
@@ -186,7 +202,8 @@ export class XtreamCatalogFacadeService implements PortalCatalogFacade<
     }
 
     selectItem(item: Record<string, unknown>): string[] | null {
-        const xtreamId = item['xtream_id'];
+        const xtreamId =
+            item['xtream_id'] ?? item['stream_id'] ?? item['series_id'];
         if (xtreamId === undefined || xtreamId === null) {
             return null;
         }
@@ -196,11 +213,7 @@ export class XtreamCatalogFacadeService implements PortalCatalogFacade<
             return [String(xtreamId)];
         }
 
-        const categoryId = item['category_id'];
-        if (categoryId === undefined || categoryId === null) {
-            return null;
-        }
-
+        const categoryId = item['category_id'] ?? '0';
         return [String(categoryId), String(xtreamId)];
     }
 

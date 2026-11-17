@@ -34,6 +34,10 @@ export interface XtreamLiveChannelItem {
     readonly tv_archive?: number | null;
     readonly tv_archive_duration?: number | string | null;
     readonly xtream_id: number;
+    readonly variants?: readonly XtreamLiveChannelItem[];
+    readonly qualityLabel?: string;
+    readonly qualityRank?: number;
+    readonly groupKey?: string;
 }
 
 type QueuePolicy = 'on-channel-change' | 'preserve' | 'replace';

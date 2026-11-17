@@ -1,0 +1,106 @@
+<div class="nktv-login-wrapper">
+    <div class="nktv-login-bg-overlay"></div>
+    <div class="nktv-login-card">
+        <!-- Brand Header with Logo -->
+        <div class="nktv-brand-header">
+            <div class="nktv-logo-glow-ring">
+                <img
+                    class="nktv-logo"
+                    src="assets/images/nktv-logo.png"
+                    alt="NKTV Logo"
+                    width="140"
+                    height="140"
+                />
+            </div>
+            <h1 class="nktv-title">NKTV</h1>
+            <p class="nktv-subtitle">STREAMING MULTIPLATAFORMA BRASIL</p>
+        </div>
+
+        <!-- Login Form -->
+        <form class="nktv-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+            <!-- Username Input -->
+            <mat-form-field appearance="outline" class="nktv-field" subscriptSizing="dynamic">
+                <mat-label>Usuário</mat-label>
+                <input
+                    matInput
+                    type="text"
+                    id="username"
+                    formControlName="username"
+                    autocomplete="username"
+                    placeholder="Digite seu usuário"
+                    required
+                />
+                <mat-icon matPrefix class="field-icon">person</mat-icon>
+            </mat-form-field>
+
+            <!-- Password Input -->
+            <mat-form-field appearance="outline" class="nktv-field" subscriptSizing="dynamic">
+                <mat-label>Senha</mat-label>
+                <input
+                    matInput
+                    [type]="passwordToggle.inputType()"
+                    id="password"
+                    formControlName="password"
+                    autocomplete="current-password"
+                    placeholder="Digite sua senha"
+                    required
+                />
+                <mat-icon matPrefix class="field-icon">lock</mat-icon>
+                <button
+                    mat-icon-button
+                    matSuffix
+                    type="button"
+                    appPasswordVisibilityToggle
+                    #passwordToggle="appPasswordVisibilityToggle"
+                    [attr.aria-label]="'Mostrar senha'"
+                >
+                    <mat-icon>{{ passwordToggle.icon() }}</mat-icon>
+                </button>
+            </mat-form-field>
+
+            <!-- Error Feedback -->
+            @if (errorMessage()) {
+                <div class="nktv-error-banner" role="alert">
+                    <mat-icon class="error-icon">error_outline</mat-icon>
+                    <span>{{ errorMessage() }}</span>
+                </div>
+            }
+
+            <!-- Submit Button -->
+            <button
+                mat-flat-button
+                type="submit"
+                class="nktv-submit-btn"
+                [disabled]="loading() || !loginForm.valid"
+            >
+                @if (loading()) {
+                    <mat-spinner diameter="24" class="btn-spinner"></mat-spinner>
+                    <span>CONECTANDO...</span>
+                } @else {
+                    <ng-container>
+                        <mat-icon class="btn-icon">play_arrow</mat-icon>
+                        <span>ENTRAR</span>
+                    </ng-container>
+                }
+            </button>
+
+            <!-- Fallback Connect Anyway Button if probe was unavailable -->
+            @if (showForceLogin()) {
+                <button
+                    mat-stroked-button
+                    type="button"
+                    class="nktv-fallback-btn"
+                    (click)="forceLogin()"
+                    [disabled]="loading()"
+                >
+                    <mat-icon>login</mat-icon>
+                    <span>Entrar mesmo assim</span>
+                </button>
+            }
+        </form>
+
+        <footer class="nktv-footer">
+            <span>NKTV Brasil &bull; Todos os direitos reservados</span>
+        </footer>
+    </div>
+</div>

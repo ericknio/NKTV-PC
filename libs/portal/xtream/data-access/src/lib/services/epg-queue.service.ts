@@ -245,7 +245,7 @@ export class EpgQueueService implements OnDestroy {
         }
 
         const preferUploaded =
-            this.settingsStore.preferUploadedEpgOverXtream?.() ?? false;
+            this.settingsStore.preferUploadedEpgOverXtream?.() ?? true;
 
         const ids: number[] = [];
         for (const entry of normalized) {

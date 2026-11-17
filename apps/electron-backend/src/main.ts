@@ -51,7 +51,7 @@ import {
     stopHostedServerOnQuit,
 } from './app/services/hosted-server.service';
 
-app.setName('iptvnator');
+app.setName('NKTV');
 
 traceStartupPhase('compile-cache', () => readCompileCacheOutcome());
 // Before anything can open the shared database connection.
@@ -190,7 +190,8 @@ export default class Main {
             .catch(() => undefined);
         await loadingMainWindow;
         const { module, result } = await deferred.trigger();
-        void result.appUpdateService.checkForUpdatesOnStartup();
+        // Update checks disabled for NKTV
+        // void result.appUpdateService.checkForUpdatesOnStartup();
 
         await module.finishStartupAfterFirstLoad();
 

@@ -11,6 +11,7 @@ import {
     serverSignInGuard,
 } from './server-storage/server-access.guard';
 import { settingsUnsavedChangesGuard } from './settings/settings-unsaved-changes.guard';
+import { nktvAuthGuard, nktvLoginGuard } from './nktv-login/nktv-auth.guard';
 
 // The workspace activates only once settings AND the parental lock state
 // (PIN, lock store) are known: before that the lock reads as off and a
@@ -80,8 +81,16 @@ export const routes: Routes = [
         redirectTo: 'workspace',
     },
     {
+        path: 'login',
+        canActivate: [nktvLoginGuard],
+        loadComponent: () =>
+            import('./nktv-login/nktv-login.component').then(
+                (c) => c.NktvLoginComponent
+            ),
+    },
+    {
         path: 'workspace',
-        canActivate: [serverAccessGuard],
+        canActivate: [nktvAuthGuard, serverAccessGuard],
         resolve: {
             settingsReady: settingsReadyResolver,
         },

@@ -1,14 +1,18 @@
 {
-    "name": "iptvnator",
-    "version": "0.25.0",
+    "name": "nktv",
+    "version": "1.0.6",
     "engines": {
-        "node": "^22.23.4 || ^24.22.1"
+        "node": "^22.0.0 || ^24.0.0"
     },
     "license": "MIT",
-    "description": "IPTV player application.",
-    "homepage": "https://github.com/4gray/iptvnator",
+    "description": "NKTV - Streaming Multiplataforma Brasil",
+    "homepage": "https://github.com/ericknio/NKTV-PC",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ericknio/NKTV-PC.git"
+    },
     "author": {
-        "name": "4gray",
+        "name": "ericknio",
         "email": "fourgray@proton.me"
     },
     "keywords": [
@@ -23,7 +27,7 @@
         "tv"
     ],
     "scripts": {
-        "postinstall": "electron-builder install-app-deps",
+        "postinstall": "echo ok",
         "build:frontend": "nx build web",
         "build:frontend:pwa": "nx build web --configuration=pwa",
         "build:backend": "nx build electron-backend --configuration=production",
@@ -232,8 +236,10 @@
         "@nx/playwright": "24.0.4",
         "@nx/web": "24.0.4",
         "@nx/workspace": "24.0.4",
+        "@oxc-parser/binding-win32-x64-msvc": "0.150.0",
         "@playwright/test": "^1.64.0",
         "@preact/preset-vite": "2.10.6",
+        "@rolldown/binding-win32-x64-msvc": "1.2.15",
         "@schematics/angular": "22.2.5",
         "@swc-node/register": "1.12.1",
         "@swc/core": "1.16.13",

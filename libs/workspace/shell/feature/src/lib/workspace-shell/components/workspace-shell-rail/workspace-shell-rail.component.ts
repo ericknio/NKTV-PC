@@ -7,8 +7,11 @@ import {
 } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
+import { firstValueFrom } from 'rxjs';
+import { PlaylistsService } from '@iptvnator/services';
+import { PlaylistRefreshActionService } from '@iptvnator/playlist/shared/ui';
 import {
     PortalRailLink,
     PortalRailSection,
@@ -49,6 +52,53 @@ export class WorkspaceShellRailComponent {
     readonly serverLabelKey = computed(
         () => SERVER_LABEL_KEYS[this.serverState()]
     );
+
+    private readonly router = inject(Router);
+    private readonly playlistsService = inject(PlaylistsService);
+    private readonly playlistRefreshAction = inject(
+        PlaylistRefreshActionService
+    );
+    readonly isRefreshing = this.playlistRefreshAction.isRefreshing;
+
+    async refreshContent(): Promise<void> {
+        try {
+            const playlists = await firstValueFrom(
+                this.playlistsService.getAllPlaylists()
+            );
+            const nktv = playlists.find(
+                (p) => !!p.serverUrl || p.title === 'NKTV'
+            );
+            if (nktv) {
+                localStorage.setItem(
+                    'nktv_last_auto_refresh_timestamp',
+                    String(Date.now())
+                );
+                this.playlistRefreshAction.refresh(nktv);
+            }
+        } catch (e) {
+            console.error('Error refreshing NKTV content:', e);
+        }
+    }
+
+    async logout(): Promise<void> {
+        if (!confirm('Deseja realmente sair da sua conta NKTV?')) {
+            return;
+        }
+        try {
+            localStorage.removeItem('nktv_logged_in');
+            const playlists = await firstValueFrom(
+                this.playlistsService.getAllPlaylists()
+            );
+            for (const p of playlists) {
+                await firstValueFrom(
+                    this.playlistsService.deletePlaylist(p._id)
+                );
+            }
+        } catch {
+            // ignore
+        }
+        await this.router.navigate(['/login']);
+    }
 }
 
 const SERVER_ICONS: Record<ServerConnectionState, string> = {

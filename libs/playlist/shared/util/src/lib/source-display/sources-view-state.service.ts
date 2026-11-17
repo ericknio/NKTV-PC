@@ -7,18 +7,16 @@ import {
 
 export const SOURCES_VIEW_STORAGE_KEY = 'sources:view:v1';
 
-const TYPES: readonly SourcesTypeFilter[] = ['all', 'm3u', 'xtream', 'stalker'];
+const TYPES: readonly SourcesTypeFilter[] = ['xtream'];
 const STATUSES: readonly SourcesStatusFilter[] = ['all', 'ok', 'bad'];
-const DEFAULT_FILTER: SourcesFilter = { type: 'all', status: 'all' };
+const DEFAULT_FILTER: SourcesFilter = { type: 'xtream', status: 'all' };
 
 function readFilter(): SourcesFilter {
     try {
         const raw = localStorage.getItem(SOURCES_VIEW_STORAGE_KEY);
         const parsed = raw ? (JSON.parse(raw) as Partial<SourcesFilter>) : {};
         return {
-            type: TYPES.includes(parsed.type as SourcesTypeFilter)
-                ? (parsed.type as SourcesTypeFilter)
-                : 'all',
+            type: 'xtream',
             status: STATUSES.includes(parsed.status as SourcesStatusFilter)
                 ? (parsed.status as SourcesStatusFilter)
                 : 'all',

@@ -1,3 +1,4 @@
+/// <reference path="../../../../../../../global.d.ts" />
 import {
     activateXtreamArchiveAction,
     getProgramTimestampSeconds,
@@ -28,6 +29,7 @@ import { filter } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe } from '@ngx-translate/core';
 import {
@@ -50,6 +52,7 @@ import {
     getChannelItemByNumber,
     isTypingInInput,
     LiveEpgPanelState,
+    normalizeChannelName,
     persistLiveEpgPanelState,
     persistPortalChannelSortMode,
     queryParamSignal,
@@ -164,6 +167,7 @@ const LIVE_CHANNEL_SORT_STORAGE_KEY = 'xtream-live-channel-sort-mode';
         MatIcon,
         MatMenuModule,
         MatProgressSpinnerModule,
+        MatSnackBarModule,
         MatTooltipModule,
         MenuItemRadioCheckDirective,
         MenuItemRadioDirective,
@@ -210,6 +214,10 @@ export class LiveStreamLayoutComponent
     private readonly parentalLock = inject(ParentalLockService);
     private readonly databaseService = inject(DatabaseService);
     private readonly liveAutoOpenState = inject(LiveStreamAutoOpenStateService);
+    private readonly snackBar = inject(MatSnackBar, { optional: true });
+    readonly currentVariants = signal<XtreamLiveChannelItem[]>([]);
+    private lastPlaybackProgressMs = 0;
+    private lastPlaybackPosition = -1;
 
     readonly categories = this.xtreamStore.getCategoriesBySelectedType;
     readonly categoryItemCounts = this.xtreamStore.getCategoryItemCounts;
@@ -768,6 +776,25 @@ export class LiveStreamLayoutComponent
             onCleanup(() => clearInterval(intervalId));
         });
 
+        // Watchdog: detect stream buffer stalls (> 6.5s) and step down quality
+        effect((onCleanup) => {
+            const intervalId = window.setInterval(() => {
+                if (
+                    !this.usesEmbeddedPlayer() ||
+                    !this.activeStreamUrl() ||
+                    this.lastPlaybackProgressMs === 0
+                ) {
+                    return;
+                }
+                const now = Date.now();
+                if (now - this.lastPlaybackProgressMs > 6500) {
+                    this.stepDownQualityVariant('travamento');
+                }
+            }, 2000);
+
+            onCleanup(() => clearInterval(intervalId));
+        });
+
         // Read pending auto-open state once at mount and again on every
         // NavigationEnd. Arriving from another route (a collection's "open in
         // playlist", the dashboard, global search into another portal), the
@@ -914,7 +941,7 @@ export class LiveStreamLayoutComponent
         }
         if (remoteControl?.onRemoteControlCommand) {
             const unsubscribe = remoteControl.onRemoteControlCommand(
-                (command) => {
+                (command: any) => {
                     this.handleRemoteControlCommand(command);
                 }
             );
@@ -935,6 +962,9 @@ export class LiveStreamLayoutComponent
         remote = false,
         onConfirmed?: () => void
     ): void {
+        this.updateCurrentVariants(item);
+        this.lastPlaybackProgressMs = Date.now();
+        this.lastPlaybackPosition = -1;
         const request = this.tuneRequests.begin();
         const { owner } = request;
         if (
@@ -1113,8 +1143,124 @@ export class LiveStreamLayoutComponent
     }
 
     onInlinePlaybackStarted(playback: ResolvedPortalPlayback): void {
+        this.lastPlaybackProgressMs = Date.now();
         if (playback === this.activePlayback())
             this.tuneRequests.confirmInline();
+    }
+
+    onInlinePlaybackFailed(): void {
+        this.stepDownQualityVariant('falha');
+    }
+
+    onInlineTimeUpdate(event: { currentTime: number; playing?: boolean }): void {
+        if (event.playing === false) {
+            return;
+        }
+        const now = Date.now();
+        if (Math.abs(event.currentTime - this.lastPlaybackPosition) > 0.05) {
+            this.lastPlaybackPosition = event.currentTime;
+            this.lastPlaybackProgressMs = now;
+            return;
+        }
+
+        if (
+            this.lastPlaybackProgressMs > 0 &&
+            now - this.lastPlaybackProgressMs > 6500
+        ) {
+            this.stepDownQualityVariant('travamento');
+        }
+    }
+
+    private stepDownQualityVariant(reason: 'falha' | 'travamento'): boolean {
+        const variants = this.currentVariants();
+        if (variants.length <= 1) {
+            this.lastPlaybackProgressMs = 0;
+            return false;
+        }
+        const currentId = this.activeLiveItemId();
+        const currentIndex = variants.findIndex((v) => v.xtream_id === currentId);
+        if (currentIndex >= 0 && currentIndex < variants.length - 1) {
+            const nextVariant = variants[currentIndex + 1];
+            const nextLabel = nextVariant.qualityLabel || 'inferior';
+            this.lastPlaybackProgressMs = Date.now();
+            this.lastPlaybackPosition = -1;
+            const message =
+                reason === 'falha'
+                    ? `Transmissão com erro. Alternando para ${nextLabel}...`
+                    : `Transmissão travando. Alternando para ${nextLabel}...`;
+            this.snackBar?.open(message, undefined, { duration: 4000 });
+            this.playLive(nextVariant, true);
+            return true;
+        }
+        // At the end of variants list, stop further automatic attempts
+        this.lastPlaybackProgressMs = 0;
+        return false;
+    }
+
+    selectQualityVariant(variant: XtreamLiveChannelItem): void {
+        if (variant.xtream_id === this.activeLiveItemId()) {
+            return;
+        }
+        this.playLive(variant, true);
+    }
+
+    private updateCurrentVariants(item: XtreamLiveChannelItem): void {
+        const existingVariants = this.currentVariants();
+        const isCurrentVariant = existingVariants.some(
+            (v) => v.xtream_id === item.xtream_id
+        );
+        if (isCurrentVariant && existingVariants.length > 0) {
+            return;
+        }
+
+        if (item.variants && item.variants.length > 0) {
+            this.currentVariants.set([...item.variants]);
+            return;
+        }
+
+        const rawName = item.title || item.name || '';
+        const norm = normalizeChannelName(rawName);
+        const allStreams = this.getAllLiveStreams();
+        if (norm.groupKey && allStreams.length > 0) {
+            const matches = allStreams.filter((stream) => {
+                const sNorm = normalizeChannelName(stream.title || stream.name || '');
+                return sNorm.groupKey === norm.groupKey;
+            });
+            if (matches.length > 1) {
+                const mapped = matches.map((m) => {
+                    const mNorm = normalizeChannelName(m.title || m.name || '');
+                    return {
+                        ...m,
+                        qualityRank: mNorm.qualityRank,
+                        qualityLabel:
+                            mNorm.qualityLabel ||
+                            (mNorm.qualityRank >= 400
+                                ? '4K'
+                                : mNorm.qualityRank >= 300
+                                ? 'FHD'
+                                : mNorm.qualityRank >= 200
+                                ? 'HD'
+                                : 'SD'),
+                    } as XtreamLiveChannelItem;
+                });
+                mapped.sort((a, b) => (b.qualityRank ?? 0) - (a.qualityRank ?? 0));
+
+                const seen = new Map<string, number>();
+                mapped.forEach((v) => {
+                    const label = v.qualityLabel || 'Padrão';
+                    const count = (seen.get(label) || 0) + 1;
+                    seen.set(label, count);
+                    if (count > 1) {
+                        (v as { qualityLabel?: string }).qualityLabel = `${label} (${count})`;
+                    }
+                });
+
+                this.currentVariants.set(mapped);
+                return;
+            }
+        }
+
+        this.currentVariants.set([item]);
     }
 
     async onProgramActivated(event: EpgProgramActivationEvent): Promise<void> {

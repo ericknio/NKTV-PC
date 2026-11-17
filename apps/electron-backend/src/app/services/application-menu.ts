@@ -63,6 +63,8 @@ export function applicationMenuTemplate(
     const updates: MenuItemConstructorOptions = {
         id: 'app-check-for-updates',
         label: labels.updates,
+        enabled: false,
+        visible: false,
         click: () => dispatch('check-for-updates'),
     };
     const mac = platform === 'darwin';

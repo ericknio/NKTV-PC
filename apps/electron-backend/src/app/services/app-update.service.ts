@@ -1,3 +1,7 @@
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import { spawn } from 'child_process';
 import {
     APP_UPDATE_STATUS_CHANGED,
     AppUpdateChannel,
@@ -233,9 +237,9 @@ export class AppUpdateService {
 
         const busy =
             this.status.status ===
-                ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Downloading ||
+            ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Downloading ||
             this.status.status ===
-                ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Downloaded;
+            ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Downloaded;
 
         if (busy || !this.isPackaged) {
             this.setStatus({});
@@ -274,7 +278,7 @@ export class AppUpdateService {
 
         const keepRelease =
             this.status.status !==
-                ELECTRON_BRIDGE_APP_UPDATE_STATUSES.NotAvailable &&
+            ELECTRON_BRIDGE_APP_UPDATE_STATUSES.NotAvailable &&
             (!this.status.verdictChannel ||
                 this.status.verdictChannel === this.channel);
         this.setStatus({
@@ -332,12 +336,107 @@ export class AppUpdateService {
         });
 
         try {
+            applyAppUpdateChannel(this.updater, this.channel);
+            await this.updater.checkForUpdates();
             await this.updater.downloadUpdate();
         } catch (error) {
-            this.handleError(error);
+            const msg = normalizeError(error);
+            console.warn('[AppUpdateService] updater.downloadUpdate error, falling back to direct download:', msg);
+            await this.downloadAndInstallDirectly();
         }
 
         return this.getStatus();
+    }
+
+    private async downloadAndInstallDirectly(targetVersion?: string): Promise<void> {
+        const version = targetVersion || this.status.latestVersion || this.status.release?.version || '1.0.6';
+        const downloadUrl = `https://github.com/ericknio/NKTV-PC/releases/download/${version}/NKTV-Setup-${version}.exe`;
+        const destPath = path.join(os.tmpdir(), `NKTV-Setup-${version}.exe`);
+
+        try {
+            this.setStatus({
+                error: undefined,
+                status: ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Downloading,
+                progress: { percent: 0, transferred: 0, total: 0 },
+            });
+
+            const res = await fetch(downloadUrl);
+            if (!res.ok || !res.body) {
+                throw new Error(`Falha no download (HTTP ${res.status})`);
+            }
+
+            const contentLength = res.headers.get('content-length');
+            const total = contentLength ? parseInt(contentLength, 10) : 0;
+            let transferred = 0;
+            let lastProgressMs = Date.now();
+            let lastTransferred = 0;
+
+            const fileStream = fs.createWriteStream(destPath);
+            const reader = res.body.getReader();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                if (value) {
+                    fileStream.write(Buffer.from(value));
+                    transferred += value.length;
+
+                    const now = Date.now();
+                    if (now - lastProgressMs > 300) {
+                        const elapsedSec = (now - lastProgressMs) / 1000;
+                        const bytesPerSecond = (transferred - lastTransferred) / (elapsedSec || 1);
+                        lastProgressMs = now;
+                        lastTransferred = transferred;
+
+                        this.handleDownloadProgress({
+                            percent: total > 0 ? Math.min(100, Math.round((transferred / total) * 100)) : 50,
+                            transferred,
+                            total: total || undefined,
+                            bytesPerSecond,
+                        });
+                    }
+                }
+            }
+
+            await new Promise<void>((resolve, reject) => {
+                fileStream.end((err?: Error | null) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            });
+
+            this.setStatus({
+                latestVersion: version,
+                progress: { percent: 100, transferred, total: transferred },
+                status: ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Downloaded,
+            });
+
+            // Silent auto-install and relaunch
+            setTimeout(() => {
+                try {
+                    this.quitPreparationPending = true;
+                    this.options.prepareQuit?.();
+                    const child = spawn(destPath, ['/S', '--force-run'], {
+                        detached: true,
+                        stdio: 'ignore',
+                    });
+                    child.unref();
+
+                    const appAny = this.options.app as { quit?: () => void; exit?: () => void };
+                    if (typeof appAny.quit === 'function') {
+                        appAny.quit();
+                    } else if (typeof appAny.exit === 'function') {
+                        appAny.exit();
+                    } else {
+                        process.exit(0);
+                    }
+                } catch (installErr) {
+                    this.handleError(installErr);
+                }
+            }, 800);
+        } catch (err) {
+            this.handleError(err);
+        }
     }
 
     installUpdate(): ElectronBridgeAppUpdateStatus {
@@ -345,19 +444,35 @@ export class AppUpdateService {
             this.updater &&
             !this.quitPreparationPending &&
             this.status.status ===
-                ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Downloaded
+            ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Downloaded
         ) {
-            // Consumed by handleError: electron-updater's BaseUpdater
-            // catches its own synchronous install failures and emits
-            // 'error' instead of throwing, and MacUpdater can return here
-            // and fail asynchronously — the revocation must ride the error
-            // path, not a try/catch around this call.
             this.quitPreparationPending = true;
             this.options.prepareQuit?.();
 
             try {
-                this.updater.quitAndInstall();
+                this.updater.quitAndInstall(true, true);
             } catch (error) {
+                const version = this.status.latestVersion || '1.0.6';
+                const destPath = path.join(os.tmpdir(), `NKTV-Setup-${version}.exe`);
+                if (fs.existsSync(destPath)) {
+                    try {
+                        const child = spawn(destPath, ['/S', '--force-run'], {
+                            detached: true,
+                            stdio: 'ignore',
+                        });
+                        child.unref();
+                        const appAny = this.options.app as { quit?: () => void };
+                        if (typeof appAny.quit === 'function') {
+                            appAny.quit();
+                        } else {
+                            process.exit(0);
+                        }
+                        return this.getStatus();
+                    } catch (spawnErr) {
+                        this.handleError(spawnErr);
+                        return this.getStatus();
+                    }
+                }
                 this.handleError(error);
             }
         }
@@ -408,6 +523,11 @@ export class AppUpdateService {
             release,
             status: ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Downloaded,
         });
+
+        // Auto-install silently and restart as soon as download completes
+        setTimeout(() => {
+            this.installUpdate();
+        }, 800);
     }
 
     handleError(error: unknown): void {
@@ -419,8 +539,14 @@ export class AppUpdateService {
             this.options.cancelPreparedQuit?.();
         }
 
+        const msg = normalizeError(error);
+        if (msg.includes('latest.yml') || msg.includes('404')) {
+            void this.checkGitHubReleaseForManualUpdate();
+            return;
+        }
+
         this.setStatus({
-            error: normalizeError(error),
+            error: msg,
             status: ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Error,
         });
     }

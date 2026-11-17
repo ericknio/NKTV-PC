@@ -1,6 +1,19 @@
 <!-- No brand mark: it linked to the page the first workspace link opens.
      The page's Back lives in the header's leading slot. -->
 <aside class="app-rail" [class.is-macos]="isMacOS()">
+    <button
+        type="button"
+        class="rail-refresh-btn nav-item"
+        (click)="refreshContent()"
+        [disabled]="isRefreshing()"
+        matTooltip="Recarregar Todo Conteúdo"
+        matTooltipPosition="right"
+        aria-label="Recarregar Todo Conteúdo"
+        data-test-id="rail-refresh-content"
+    >
+        <mat-icon [class.is-spinning]="isRefreshing()" aria-hidden="true">sync</mat-icon>
+    </button>
+
     <app-workspace-shell-rail-links [links]="workspaceLinks()" />
 
     @if (primaryContextLinks().length > 0) {
@@ -47,5 +60,15 @@
         >
             <mat-icon aria-hidden="true">settings</mat-icon>
         </a>
+        <button
+            type="button"
+            class="rail-shortcut nav-item rail-logout"
+            (click)="logout()"
+            matTooltip="Sair da Conta NKTV"
+            matTooltipPosition="right"
+            aria-label="Sair da Conta NKTV"
+        >
+            <mat-icon aria-hidden="true">logout</mat-icon>
+        </button>
     </div>
 </aside>

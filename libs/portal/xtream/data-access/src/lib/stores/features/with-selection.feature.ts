@@ -8,7 +8,11 @@ import {
     withState,
 } from '@ngrx/signals';
 import { RuntimeCapabilitiesService } from '@iptvnator/services';
-import type { PortalWatchStateFilter } from '@iptvnator/portal/shared/util/tokens';
+import {
+    getPortalPlaybackProgressPercent,
+    isPortalPlaybackInProgress,
+    type PortalWatchStateFilter,
+} from '@iptvnator/portal/shared/util/tokens';
 import type { PlaybackPositionsState } from './with-playback-positions.feature';
 import { filterXtreamVodByWatchState } from './xtream-vod-watch-filter';
 import { ContentType } from '../../xtream-state';
@@ -45,6 +49,8 @@ export {
     filterByMinRating,
 } from './with-selection-content.util';
 
+export const CONTINUE_WATCHING_CATEGORY_ID = -100;
+
 /**
  * Selection feature store for managing UI selection and the infinite-scroll
  * render window. Handles:
@@ -60,6 +66,7 @@ export function withSelection() {
                 Pick<
                     PlaybackPositionsState,
                     | 'playbackPositions'
+                    | 'seriesPositions'
                     | 'positionsPlaylistId'
                     | 'positionsLoadState'
                 > & { currentPlaylist: { id: string } | null }
@@ -157,6 +164,88 @@ export function withSelection() {
                 selectedTypeContentReady()
             );
 
+            const continueWatchingVod = computed(() => {
+                const storeAny = store as ParentSelectionStoreLike;
+                const vods = storeAny.vodStreams?.() || [];
+                const positions = store.playbackPositions();
+                return vods
+                    .filter((item: any) => {
+                        const id = Number(
+                            item.stream_id ?? item.xtream_id ?? item.id
+                        );
+                        return isPortalPlaybackInProgress(
+                            positions.get(`vod_${id}`)
+                        );
+                    })
+                    .map((item: any) => {
+                        const id = Number(
+                            item.stream_id ?? item.xtream_id ?? item.id
+                        );
+                        const pos = positions.get(`vod_${id}`);
+                        return {
+                            ...item,
+                            progress: getPortalPlaybackProgressPercent(pos),
+                            positionSeconds: pos?.positionSeconds,
+                            updatedAt: pos?.updatedAt ?? '',
+                        };
+                    })
+                    .sort((a: any, b: any) =>
+                        (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '')
+                    );
+            });
+
+            const continueWatchingSeries = computed(() => {
+                const storeAny = store as ParentSelectionStoreLike;
+                const seriesList = storeAny.serialStreams?.() || [];
+                const seriesMap = store.seriesPositions();
+                return seriesList
+                    .filter((item: any) => {
+                        const id = Number(
+                            item.series_id ?? item.xtream_id ?? item.id
+                        );
+                        const rows = seriesMap.get(id);
+                        return (
+                            rows &&
+                            rows.some((pos) => isPortalPlaybackInProgress(pos))
+                        );
+                    })
+                    .map((item: any) => {
+                        const id = Number(
+                            item.series_id ?? item.xtream_id ?? item.id
+                        );
+                        const rows = seriesMap.get(id) ?? [];
+                        const inProgress = rows
+                            .filter((pos) => isPortalPlaybackInProgress(pos))
+                            .sort((a, b) =>
+                                (b.updatedAt ?? '').localeCompare(
+                                    a.updatedAt ?? ''
+                                )
+                            )[0];
+                        return {
+                            ...item,
+                            progress:
+                                getPortalPlaybackProgressPercent(inProgress),
+                            episodeSubtitle:
+                                inProgress?.seasonNumber &&
+                                inProgress?.episodeNumber
+                                    ? `T${inProgress.seasonNumber}:E${inProgress.episodeNumber}`
+                                    : '',
+                            positionSeconds: inProgress?.positionSeconds,
+                            updatedAt: inProgress?.updatedAt ?? '',
+                        };
+                    })
+                    .sort((a: any, b: any) =>
+                        (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '')
+                    );
+            });
+
+            const continueWatchingVodCount = computed(
+                () => continueWatchingVod().length
+            );
+            const continueWatchingSeriesCount = computed(
+                () => continueWatchingSeries().length
+            );
+
             // ---------------------------------------------------------------------------
             // Stable filter + sort intermediate.
             // Depends on category / search / sort — but NOT on page or limit.
@@ -171,14 +260,18 @@ export function withSelection() {
                 if (categoryType === 'vod' || categoryType === 'series') {
                     const minRating = store.minRating();
                     let filtered = categoryId
-                        ? getVisibleContentForType(categoryType).filter(
-                              (item) => Number(item.category_id) === categoryId
-                          )
+                        ? Number(categoryId) === CONTINUE_WATCHING_CATEGORY_ID
+                            ? (categoryType === 'vod'
+                                  ? continueWatchingVod()
+                                  : continueWatchingSeries())
+                            : getVisibleContentForType(categoryType).filter(
+                                  (item) => Number(item.category_id) === categoryId
+                              )
                         : sortedContent();
 
                     filtered = filterBySearchTerm(filtered, searchTerm);
                     filtered = filterByMinRating(filtered, minRating);
-                    return categoryId || searchTerm || minRating
+                    return categoryId && Number(categoryId) !== CONTINUE_WATCHING_CATEGORY_ID
                         ? sortByMode(filtered, sortMode, categoryType)
                         : filtered;
                 }
@@ -321,6 +414,11 @@ export function withSelection() {
 
                 selectedTypeCountsReady,
 
+                continueWatchingVod,
+                continueWatchingSeries,
+                continueWatchingVodCount,
+                continueWatchingSeriesCount,
+
                 /**
                  * Memoized category item counts map.
                  * Selects from per-type pre-computed maps so switching content tabs
@@ -328,11 +426,28 @@ export function withSelection() {
                  */
                 getCategoryItemCounts: computed(() => {
                     const type = store.selectedContentType();
-                    return type === 'live'
-                        ? liveItemCounts()
-                        : type === 'vod'
-                          ? vodItemCounts()
-                          : seriesItemCounts();
+                    const baseCounts =
+                        type === 'live'
+                            ? liveItemCounts()
+                            : type === 'vod'
+                              ? vodItemCounts()
+                              : seriesItemCounts();
+                    const counts = new Map(baseCounts);
+                    if (type === 'vod' && continueWatchingVodCount() > 0) {
+                        counts.set(
+                            CONTINUE_WATCHING_CATEGORY_ID,
+                            continueWatchingVodCount()
+                        );
+                    } else if (
+                        type === 'series' &&
+                        continueWatchingSeriesCount() > 0
+                    ) {
+                        counts.set(
+                            CONTINUE_WATCHING_CATEGORY_ID,
+                            continueWatchingSeriesCount()
+                        );
+                    }
+                    return counts;
                 }),
 
                 /**

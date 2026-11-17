@@ -41,5 +41,5 @@ export function normalizeAppLanguage(value: unknown): Language {
     }
     return SUPPORTED_LANGUAGES.has(code)
         ? (code as Language)
-        : Language.ENGLISH;
+        : Language.PORTUGUESE_BRAZIL;
 }

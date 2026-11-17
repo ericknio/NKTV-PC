@@ -57,9 +57,20 @@ function xtreamServerUrlValidator(
     }
 }
 
+function getDefaultServerUrl(): string {
+    try {
+        const saved = localStorage.getItem('nktv_server_url');
+        if (saved && saved.trim().length > 0) {
+            return saved.trim().replace(/\/+$/, '');
+        }
+    } catch {
+        // ignore
+    }
+    return 'http://nktv.site';
+}
+
 @Component({
     imports: [
-        XtreamContentSelectionComponent,
         FormsModule,
         MatFormFieldModule,
         MatIcon,
@@ -68,7 +79,6 @@ function xtreamServerUrlValidator(
         PasswordVisibilityToggleDirective,
         ReactiveFormsModule,
         TranslatePipe,
-        RevealDetailsDirective,
     ],
     selector: 'app-xtream-code-import',
     providers: [provideFormFieldDefaults()],
@@ -94,11 +104,11 @@ export class XtreamCodeImportComponent {
 
     form = new FormGroup({
         _id: new FormControl(createRandomId()),
-        title: new FormControl('', [Validators.required]),
+        title: new FormControl('NKTV', [Validators.required]),
         password: new FormControl('', [Validators.required]),
         username: new FormControl('', [Validators.required]),
         userAgent: new FormControl(''),
-        serverUrl: new FormControl('', [
+        serverUrl: new FormControl(getDefaultServerUrl(), [
             Validators.required,
             Validators.pattern(this.URL_REGEX),
             xtreamServerUrlValidator,
@@ -139,11 +149,11 @@ export class XtreamCodeImportComponent {
         this.passwordToggle()?.hide();
         this.form.reset({
             _id: createRandomId(),
-            title: '',
+            title: 'NKTV',
             password: '',
             username: '',
             userAgent: '',
-            serverUrl: '',
+            serverUrl: 'http://nktv.site',
             importDate: new Date().toISOString(),
             xtreamContentTypes: [...XTREAM_CONTENT_TYPES],
         });

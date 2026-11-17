@@ -173,6 +173,30 @@
                     guide.isOpen() ? '' : null
                 "
             >
+                @if (currentVariants().length > 1) {
+                    <div
+                        class="channel-quality-bar"
+                        [class.quality-bar--guide-open]="guide.isOpen()"
+                    >
+                        <span class="quality-label-text">
+                            <mat-icon class="quality-icon">high_quality</mat-icon>
+                            <span>Qualidade:</span>
+                        </span>
+                        <div class="quality-pills-list">
+                            @for (v of currentVariants(); track v.xtream_id) {
+                                <button
+                                    type="button"
+                                    class="quality-pill-btn"
+                                    [class.active]="activeLiveItemId() === v.xtream_id"
+                                    (click)="selectQualityVariant(v)"
+                                    [attr.title]="'Mudar para ' + (v.qualityLabel || 'Padrão')"
+                                >
+                                    {{ v.qualityLabel || 'Padrão' }}
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
                 <app-web-player-view
                     #inlinePlayer
                     [playbackSessionKey]="playbackSessionKey()"
@@ -182,6 +206,8 @@
                     [timelineSegments]="catchupTimelineSegments()"
                     [recordingMetadata]="recordingMetadata()"
                     (playbackStarted)="onInlinePlaybackStarted($event)"
+                    (playbackFailed)="onInlinePlaybackFailed()"
+                    (timeUpdate)="onInlineTimeUpdate($event)"
                     (externalFallbackRequested)="
                         handleExternalFallbackRequest($event)
                     "

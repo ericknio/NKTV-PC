@@ -70,7 +70,7 @@ export class WorkspaceShellRouteStateService {
         }
 
         links.push({
-            icon: 'library_books',
+            icon: 'person',
             tooltip: this.translateText('WORKSPACE.SHELL.RAIL_SOURCES'),
             path: ['/workspace/sources'],
         });

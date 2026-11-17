@@ -51,6 +51,8 @@ import { AppUpdateNotificationPanelComponent } from './app-update-notification-p
 import { AppStartupStatusComponent } from './app-startup-status.component';
 import { syncDocumentLanguage } from './services/document-language';
 import { SourceSyncStatusComponent } from './source-sync-status.component';
+import { NktvAutoRefreshService } from './services/nktv-auto-refresh.service';
+import { NktvPanelSyncService } from './services/nktv-panel-sync.service';
 
 const debugAppComponent = createDevLogger('AppComponent');
 
@@ -111,9 +113,11 @@ export class AppComponent implements OnInit {
     private runtime = inject(RuntimeCapabilitiesService);
     private readonly workspaceShellActions = inject(WORKSPACE_SHELL_ACTIONS);
     private readonly contextDrawer = inject(WorkspaceShellContextDrawerService);
+    private readonly nktvAutoRefresh = inject(NktvAutoRefreshService);
+    private readonly nktvPanelSync = inject(NktvPanelSyncService);
 
     /** Default language as fallback */
-    private readonly DEFAULT_LANG = Language.ENGLISH;
+    private readonly DEFAULT_LANG = Language.PORTUGUESE_BRAZIL;
 
     constructor() {
         startAppMenuActions();
@@ -174,6 +178,8 @@ export class AppComponent implements OnInit {
 
         this.initSettings();
         this.triggerAutoUpdatePlaylists();
+        this.nktvAutoRefresh.start();
+        this.nktvPanelSync.start();
     }
 
     /**

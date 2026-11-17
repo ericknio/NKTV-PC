@@ -115,6 +115,10 @@ export class SerialDetailsPlaybackService {
             this.xtreamStore.loadAllPositions(playlistId),
     });
     private lastSaveTime = 0;
+    private lastTimeUpdateEvent: {
+        currentTime: number;
+        duration: number;
+    } | null = null;
 
     readonly inlinePlayback = signal<ResolvedPortalPlayback | null>(null);
     readonly inlinePlaybackSessionEpisodeState =
@@ -213,6 +217,7 @@ export class SerialDetailsPlaybackService {
             ) ?? null;
 
         inject(DestroyRef).onDestroy(() => {
+            this.flushPendingPosition();
             unsubscribePositionUpdates?.();
         });
     }
@@ -305,7 +310,21 @@ export class SerialDetailsPlaybackService {
         this.playNextEpisode();
     }
 
+    private flushPendingPosition(): void {
+        const playback = this.inlinePlayback();
+        if (playback?.contentInfo && this.lastTimeUpdateEvent) {
+            const position = inlineProgressPosition(
+                playback.contentInfo,
+                this.lastTimeUpdateEvent
+            );
+            void this.savePosition(playback.contentInfo.playlistId, position);
+            this.playbackPositionState.update(position);
+            this.lastTimeUpdateEvent = null;
+        }
+    }
+
     closeInlinePlayer(): void {
+        this.flushPendingPosition();
         this.inlinePlayback.set(null);
         this.inlinePlaybackSessionEpisodeState.set(null);
         this.lastSaveTime = 0;
@@ -315,9 +334,10 @@ export class SerialDetailsPlaybackService {
         currentTime: number;
         duration: number;
     }): void {
+        this.lastTimeUpdateEvent = event;
         const playback = this.inlinePlayback();
         const now = Date.now();
-        if (!playback?.contentInfo || now - this.lastSaveTime <= 15000) return;
+        if (!playback?.contentInfo || now - this.lastSaveTime <= 5000) return;
         this.lastSaveTime = now;
         const position = inlineProgressPosition(playback.contentInfo, event);
         void this.savePosition(playback.contentInfo.playlistId, position);

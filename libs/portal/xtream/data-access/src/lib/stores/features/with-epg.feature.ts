@@ -144,7 +144,7 @@ export function withEpg() {
             };
 
             const preferUploaded = (): boolean =>
-                settingsStore.preferUploadedEpgOverXtream?.() ?? false;
+                settingsStore.preferUploadedEpgOverXtream?.() ?? true;
 
             let loadGeneration = 0;
             let guideRead: AbortController | undefined;

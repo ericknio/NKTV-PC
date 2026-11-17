@@ -419,6 +419,112 @@
                     </div>
                 </div>
             } @else {
+                @if (showContinueWatchingRail()) {
+                    <section
+                        class="continue-watching-rail"
+                        [attr.aria-label]="
+                            'WORKSPACE.CONTINUE_WATCHING' | translate
+                        "
+                    >
+                        <div class="continue-watching-rail__header">
+                            <mat-icon class="continue-watching-rail__icon"
+                                >play_circle</mat-icon
+                            >
+                            <span class="continue-watching-rail__title">{{
+                                'WORKSPACE.CONTINUE_WATCHING' | translate
+                            }}</span>
+                        </div>
+                        <div class="continue-watching-rail__track">
+                            @for (
+                                item of continueWatchingItems();
+                                track (
+                                    item['xtream_id'] ??
+                                    item['stream_id'] ??
+                                    item['series_id'] ??
+                                    item['id']
+                                )
+                            ) {
+                                <div
+                                    class="continue-watching-card"
+                                    role="button"
+                                    tabindex="0"
+                                    (click)="onItemClick(item)"
+                                    (keydown.enter)="onItemClick(item)"
+                                >
+                                    <div class="continue-watching-card__poster">
+                                        <img
+                                            class="continue-watching-card__img"
+                                            [src]="
+                                                $any(item)['stream_icon'] ??
+                                                $any(item)['poster_url'] ??
+                                                $any(item)['cover'] ??
+                                                './assets/images/default-poster.png'
+                                            "
+                                            loading="lazy"
+                                            [alt]="
+                                                $any(item)['name'] ??
+                                                $any(item)['title'] ??
+                                                ''
+                                            "
+                                            (error)="
+                                                onContinueWatchingPosterError(
+                                                    $event
+                                                )
+                                            "
+                                        />
+                                        <div
+                                            class="continue-watching-card__play-badge"
+                                        >
+                                            <mat-icon>play_arrow</mat-icon>
+                                        </div>
+                                        @if (
+                                            $any(item)['progress'];
+                                            as progress
+                                        ) {
+                                            @if (progress > 0) {
+                                                <div
+                                                    class="continue-watching-card__progress-bar"
+                                                >
+                                                    <div
+                                                        class="continue-watching-card__progress-fill"
+                                                        [style.width.%]="
+                                                            progress
+                                                        "
+                                                    ></div>
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+                                    <div class="continue-watching-card__info">
+                                        <span
+                                            class="continue-watching-card__name"
+                                            [title]="
+                                                $any(item)['name'] ??
+                                                $any(item)['title'] ??
+                                                ''
+                                            "
+                                        >
+                                            {{
+                                                $any(item)['name'] ??
+                                                $any(item)['title']
+                                            }}
+                                        </span>
+                                        @if (
+                                            $any(item)['episodeSubtitle'];
+                                            as epSub
+                                        ) {
+                                            <span
+                                                class="continue-watching-card__episode"
+                                            >
+                                                {{ epSub }}
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </section>
+                }
                 <app-grid-list
                     appInfiniteScroll
                     [infiniteThresholdPx]="640"

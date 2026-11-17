@@ -1,7 +1,15 @@
 {
-    "appId": "com.fourgray.iptvnator",
-    "productName": "IPTVnator",
-    "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
+    "appId": "com.nktv.app",
+    "productName": "NKTV",
+    "publish": [
+        {
+            "provider": "github",
+            "owner": "ericknio",
+            "repo": "NKTV-PC"
+        }
+    ],
+    "npmRebuild": false,
+    "artifactName": "NKTV-${version}-${os}-${arch}.${ext}",
     "fileAssociations": [
         {
             "ext": "m3u",
@@ -18,13 +26,6 @@
             "role": "Viewer"
         }
     ],
-    "publish": [
-        {
-            "provider": "github",
-            "owner": "4gray",
-            "repo": "iptvnator"
-        }
-    ],
     "directories": {
         "buildResources": "dist/apps",
         "output": "dist/executables"
@@ -33,17 +34,24 @@
         {
             "from": "dist/apps/remote-control-web",
             "to": "remote-control-web",
-            "filter": ["**/*"]
+            "filter": [
+                "**/*"
+            ]
         },
         {
             "from": "dist/apps/web-backend",
             "to": "hosted-backend",
-            "filter": ["main.cjs", "tv-setup/**/*"]
+            "filter": [
+                "main.cjs",
+                "tv-setup/**/*"
+            ]
         },
         {
             "from": "dist/apps/hosted-pwa/browser",
             "to": "hosted-pwa",
-            "filter": ["**/*"]
+            "filter": [
+                "**/*"
+            ]
         },
         "electron-backend/**/*",
         "!electron-backend/native{,/**/*}",
@@ -62,21 +70,29 @@
         "**/embedded-mpv-runtime.json"
     ],
     "extraMetadata": {
-        "name": "iptvnator",
-        "productName": "IPTVnator",
-        "desktopName": "iptvnator",
+        "name": "nktv",
+        "productName": "NKTV",
+        "desktopName": "nktv",
         "main": "electron-backend/main.js"
     },
-    "extraResources": ["dist/apps/electron-backend/workers"],
+    "extraResources": [
+        "dist/apps/electron-backend/workers"
+    ],
     "mac": {
         "target": [
             {
                 "target": "dmg",
-                "arch": ["x64", "arm64"]
+                "arch": [
+                    "x64",
+                    "arm64"
+                ]
             },
             {
                 "target": "zip",
-                "arch": ["x64", "arm64"]
+                "arch": [
+                    "x64",
+                    "arm64"
+                ]
             }
         ],
         "category": "public.app-category.video",
@@ -90,43 +106,62 @@
     },
     "linux": {
         "category": "Video",
-        "executableName": "iptvnator",
-        "executableArgs": ["--ozone-platform=x11"],
+        "executableName": "nktv",
+        "executableArgs": [
+            "--ozone-platform=x11"
+        ],
         "target": [
             {
                 "target": "AppImage",
-                "arch": ["x64", "armv7l", "arm64"]
+                "arch": [
+                    "x64",
+                    "armv7l",
+                    "arm64"
+                ]
             },
             {
                 "target": "deb",
-                "arch": ["x64", "armv7l", "arm64"]
+                "arch": [
+                    "x64",
+                    "armv7l",
+                    "arm64"
+                ]
             },
             {
                 "target": "Snap",
-                "arch": ["x64", "armv7l"]
+                "arch": [
+                    "x64",
+                    "armv7l"
+                ]
             },
             {
                 "target": "rpm",
-                "arch": ["x64"]
+                "arch": [
+                    "x64"
+                ]
             },
             {
                 "target": "pacman",
-                "arch": ["x64"]
+                "arch": [
+                    "x64"
+                ]
             },
             {
                 "target": "flatpak",
-                "arch": ["x64"]
+                "arch": [
+                    "x64"
+                ]
             }
         ],
-        "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
+        "artifactName": "NKTV-${version}-${os}-${arch}.${ext}",
         "icon": "apps/web/src/assets/icons"
     },
     "appImage": {
         "desktop": {
             "entry": {
-                "X-AppImage-Name": "IPTVnator",
-                "X-AppImage-Homepage": "https://github.com/4gray/iptvnator",
-                "X-AppImage-UpdateURL": "https://github.com/4gray/iptvnator"
+                "X-AppImage-Name": "NKTV",
+                "X-AppImage-Homepage": "http://nktv.site",
+                "X-AppImage-UpdateURL": "http://nktv.site"
             }
         }
     },
@@ -161,7 +196,9 @@
         "confinement": "strict",
         "grade": "stable",
         "summary": "IPTV application for M3U playlists, Xtream Codes API, and Stalker portals",
-        "executableArgs": ["--ozone-platform=x11"],
+        "executableArgs": [
+            "--ozone-platform=x11"
+        ],
         "plugs": [
             "default",
             {
@@ -195,13 +232,18 @@
         "target": [
             {
                 "target": "nsis",
-                "arch": ["x64", "ia32"]
+                "arch": [
+                    "x64"
+                ]
             }
         ],
-        "artifactName": "${name}-${version}-windows-${arch}-setup.${ext}",
+        "artifactName": "NKTV-Setup-${version}.${ext}",
         "icon": "apps/web/src/assets/icons/icon.png"
     },
     "nsis": {
-        "artifactName": "${name}-${version}-windows-${arch}-setup.${ext}"
+        "artifactName": "NKTV-Setup-${version}.${ext}",
+        "oneClick": false,
+        "allowToChangeInstallationDirectory": true,
+        "include": "build/installer.nsh"
     }
 }

@@ -131,7 +131,7 @@ export class XtreamEpgGuideSourceService implements EpgGuideSource {
     readonly revision = computed(() => ({
         playlist: this.playlist(),
         sources: this.sources.revision(),
-        preferUploaded: this.settings.preferUploadedEpgOverXtream?.(),
+        preferUploaded: this.settings.preferUploadedEpgOverXtream?.() ?? true,
         catalog: this.availableItems(),
     }));
 

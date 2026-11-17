@@ -183,6 +183,30 @@ export class CategoryContentViewComponent implements OnInit, OnDestroy {
             ...this.catalog.getItemProgress(item),
         }))
     );
+    readonly continueWatchingItems = computed<CategoryContentItem[]>(
+        () =>
+            (this.catalog.continueWatchingItems?.() ??
+                []) as CategoryContentItem[]
+    );
+    readonly showContinueWatchingRail = computed(() => {
+        const category = this.selectedCategory();
+        const categoryId = category?.category_id ?? category?.id;
+        const isAll =
+            !categoryId ||
+            categoryId === '*' ||
+            Number(categoryId) === 0;
+        return (
+            isAll &&
+            !this.searchTerm() &&
+            this.continueWatchingItems().length > 0
+        );
+    });
+    onContinueWatchingPosterError(event: Event): void {
+        const target = event.target as HTMLImageElement;
+        if (target && !target.src.includes('default-poster.png')) {
+            target.src = './assets/images/default-poster.png';
+        }
+    }
     /**
      * Identity of the rendered list. A change means the grid shows a
      * different result set: the scroll resets to the top and the infinite

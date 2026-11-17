@@ -10,8 +10,6 @@ export const SETTINGS_NAV_GROUPS: readonly {
 }[] = [
     { id: 'app', labelKey: 'SETTINGS.NAV_GROUP_APP' },
     { id: 'library', labelKey: 'SETTINGS.NAV_GROUP_LIBRARY' },
-    { id: 'devices', labelKey: 'SETTINGS.NAV_GROUP_DEVICES' },
-    { id: 'data', labelKey: 'SETTINGS.NAV_DATA' },
 ];
 
 /**
@@ -63,20 +61,6 @@ export const SETTINGS_SECTION_DEFINITIONS: readonly SettingsSectionDefinition[] 
             navLabelKey: 'SETTINGS.NAV_PARENTAL',
             icon: 'family_restroom',
             group: 'library',
-        },
-        {
-            id: 'remote-control',
-            navLabelKey: 'SETTINGS.NAV_REMOTE',
-            icon: 'smartphone',
-            requires: ['remote-control'],
-            group: 'devices',
-        },
-        { id: 'server', navLabelKey: 'SOURCE_SYNC.TITLE', icon: 'dns', group: 'data' },
-        {
-            id: 'backup',
-            navLabelKey: 'SETTINGS.NAV_BACKUP',
-            icon: 'backup',
-            group: 'data',
         },
         { id: 'about', navLabelKey: 'SETTINGS.NAV_ABOUT', icon: 'info' },
     ];

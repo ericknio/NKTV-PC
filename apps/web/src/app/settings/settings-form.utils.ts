@@ -132,12 +132,12 @@ export function createSettingsForm(
         portalConnectivityGuard: true,
         coverSize: 'medium' as CoverSize,
         showCoverTitles: true,
-        ...(supportsEpg ? { preferUploadedEpgOverXtream: false } : {}),
+        ...(supportsEpg ? { preferUploadedEpgOverXtream: true } : {}),
         // View mode and offset shape every guide, a portal's own included.
         ...(supportsEpgDisplay
             ? {
                   epgEnabled: true,
-                  epgViewMode: 'timeline' as EpgViewMode,
+                  epgViewMode: 'list' as EpgViewMode,
                   epgOffsetMinutes: new FormControl<number>(0, [
                       Validators.required,
                       Validators.min(-720),
@@ -256,9 +256,9 @@ export function createSettingsFromFormValue(
         preferUploadedEpgOverXtream:
             value.preferUploadedEpgOverXtream ??
             currentSettings.preferUploadedEpgOverXtream ??
-            false,
+            true,
         epgViewMode:
-            value.epgViewMode ?? currentSettings.epgViewMode ?? 'timeline',
+            value.epgViewMode ?? currentSettings.epgViewMode ?? 'list',
         epgOffsetMinutes: normalizeEpgOffsetMinutes(
             value.epgOffsetMinutes ?? currentSettings.epgOffsetMinutes
         ),

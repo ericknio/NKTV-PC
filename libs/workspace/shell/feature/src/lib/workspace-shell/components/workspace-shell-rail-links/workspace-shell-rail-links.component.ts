@@ -31,7 +31,7 @@ export class WorkspaceShellRailLinksComponent {
     resolveIcon(link: PortalRailLink): string {
         const normalizedPath = link.path.map((segment) => String(segment)).join('/');
         if (normalizedPath.includes('/workspace/sources')) {
-            return 'playlist_play';
+            return 'person';
         }
 
         return link.icon;

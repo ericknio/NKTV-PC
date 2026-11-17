@@ -71,6 +71,7 @@ export interface PortalCatalogFacade<
     readonly categoryItemCount: Signal<number>;
     readonly contentSortMode: Signal<PortalCatalogSortMode | null>;
     readonly playlist: Signal<PortalCatalogPlaylistMeta | null>;
+    readonly continueWatchingItems?: Signal<readonly TItem[]>;
     /**
      * Infinite-scroll contract: the facade grows one continuous list via
      * `loadMore()`; the catalog view renders no paginator.

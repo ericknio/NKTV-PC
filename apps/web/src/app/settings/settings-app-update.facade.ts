@@ -78,6 +78,7 @@ export class SettingsAppUpdateFacade {
     }
 
     async checkForAppUpdate(): Promise<void> {
+        this.checkAppVersion();
         if (!this.runtime.isElectron || !window.electron?.checkForAppUpdate) {
             return;
         }

@@ -9,7 +9,7 @@ export function getInitialLanguage(): Language {
             localStorage.getItem(PREFERRED_LANGUAGE_STORAGE_KEY)
         );
     } catch {
-        return Language.ENGLISH;
+        return Language.PORTUGUESE_BRAZIL;
     }
 }
 

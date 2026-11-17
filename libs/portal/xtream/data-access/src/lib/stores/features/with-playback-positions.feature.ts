@@ -159,6 +159,24 @@ export function withPlaybackPositions() {
                 hasSeriesProgress(id: number): boolean {
                     return (store.seriesPositions().get(id)?.length ?? 0) > 0;
                 },
+                hasSeriesInProgress(id: number): boolean {
+                    const rows = store.seriesPositions().get(id);
+                    if (!rows || rows.length === 0) return false;
+                    return rows.some((pos) => isPortalPlaybackInProgress(pos));
+                },
+                getSeriesInProgressPosition(
+                    id: number
+                ): PlaybackPositionData | undefined {
+                    const rows = store.seriesPositions().get(id);
+                    if (!rows || rows.length === 0) return undefined;
+                    const inProgress = rows.filter((pos) =>
+                        isPortalPlaybackInProgress(pos)
+                    );
+                    if (inProgress.length === 0) return undefined;
+                    return inProgress.sort((a, b) =>
+                        (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '')
+                    )[0];
+                },
                 async loadVodPosition(
                     playlistId: string,
                     id: number

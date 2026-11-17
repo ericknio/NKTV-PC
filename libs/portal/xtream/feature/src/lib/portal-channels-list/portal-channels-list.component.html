@@ -29,11 +29,9 @@
                     trackBy: trackBy;
                     templateCacheSize: 0
                 "
-                [name]="item.title || item.name || ''"
+                [name]="getChannelDisplayName(item)"
                 [logo]="item.stream_icon ?? item.poster_url"
-                [selected]="
-                    xtreamStore.selectedItem()?.xtream_id === item.xtream_id
-                "
+                [selected]="isChannelSelected(item)"
                 [epgProgram]="
                     supportsProviderEpg
                         ? (epgPrograms.get(item.xtream_id) ?? null)

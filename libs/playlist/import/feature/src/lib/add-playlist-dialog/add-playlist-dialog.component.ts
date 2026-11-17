@@ -75,21 +75,13 @@ const METHOD_BY_CANDIDATE_KIND: Record<
 
 @Component({
     imports: [
-        RadioGroupDirective,
-        RadioOptionDirective,
-        AutoImportComponent,
         DialogFooterDirective,
         DialogFooterStartDirective,
         DialogShellComponent,
-        FileUploadComponent,
         MatButtonModule,
         MatCheckboxModule,
         MatDialogModule,
-        MatIcon,
-        StalkerPortalImportComponent,
-        TextImportComponent,
         TranslateModule,
-        UrlUploadComponent,
         XtreamCodeImportComponent,
     ],
     selector: 'app-add-playlist',
@@ -122,7 +114,7 @@ export class AddPlaylistDialogComponent {
         file: this.fileUpload,
     });
 
-    readonly method = signal<PlaylistType>('url');
+    readonly method = signal<PlaylistType>('xtream');
     readonly autoImportEpg = signal(true);
     readonly epgEnabled = inject(EpgPreferencesService).enabled;
     readonly isM3uImport = computed(() =>

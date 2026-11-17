@@ -2315,7 +2315,8 @@
             "HINT_SELECT": "choisir",
             "HINT_OPEN": "ouvrir",
             "HINT_CLOSE": "fermer"
-        }
+        },
+        "CONTINUE_WATCHING": "Reprendre la lecture"
     },
     "LOADING": "Chargement",
     "RETRY": "Réessayer",

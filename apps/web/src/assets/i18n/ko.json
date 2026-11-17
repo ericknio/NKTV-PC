@@ -2315,7 +2315,8 @@
             "HINT_SELECT": "선택",
             "HINT_OPEN": "열기",
             "HINT_CLOSE": "닫기"
-        }
+        },
+        "CONTINUE_WATCHING": "이어서 시청"
     },
     "LOADING": "로드 중",
     "RETRY": "다시 시도",

@@ -392,4 +392,15 @@ describe('withSelection', () => {
 
         expect(store.minRating()).toBe(7);
     });
+
+    it('returns synthetic continue watching category when selected', () => {
+        store.setSelectedContentType('vod');
+        store.setSelectedCategory(-100);
+        expect(store.getSelectedCategory()).toEqual(
+            expect.objectContaining({
+                id: -100,
+                name: 'WORKSPACE.CONTINUE_WATCHING',
+            })
+        );
+    });
 });

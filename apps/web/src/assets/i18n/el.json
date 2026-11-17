@@ -2315,7 +2315,8 @@
             "HINT_SELECT": "επιλογή",
             "HINT_OPEN": "άνοιγμα",
             "HINT_CLOSE": "κλείσιμο"
-        }
+        },
+        "CONTINUE_WATCHING": "Συνέχιση παρακολούθησης"
     },
     "LOADING": "Φόρτωση",
     "RETRY": "Επανάληψη",

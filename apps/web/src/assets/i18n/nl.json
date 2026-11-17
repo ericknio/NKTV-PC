@@ -2315,7 +2315,8 @@
             "HINT_SELECT": "kiezen",
             "HINT_OPEN": "openen",
             "HINT_CLOSE": "sluiten"
-        }
+        },
+        "CONTINUE_WATCHING": "Verder kijken"
     },
     "LOADING": "Laden",
     "RETRY": "Opnieuw proberen",

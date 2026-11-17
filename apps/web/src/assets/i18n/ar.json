@@ -2315,7 +2315,8 @@
             "HINT_SELECT": "تحديد",
             "HINT_OPEN": "فتح",
             "HINT_CLOSE": "إغلاق"
-        }
+        },
+        "CONTINUE_WATCHING": "متابعة المشاهدة"
     },
     "LOADING": "جارٍ التحميل",
     "RETRY": "إعادة المحاولة",

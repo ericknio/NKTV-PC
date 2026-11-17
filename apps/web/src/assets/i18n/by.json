@@ -2315,7 +2315,8 @@
             "HINT_SELECT": "выбар",
             "HINT_OPEN": "адкрыць",
             "HINT_CLOSE": "закрыць"
-        }
+        },
+        "CONTINUE_WATCHING": "Працягнуць прагляд"
     },
     "LOADING": "Загрузка",
     "RETRY": "Паўтарыць",

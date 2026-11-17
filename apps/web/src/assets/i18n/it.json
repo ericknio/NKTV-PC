@@ -2315,7 +2315,8 @@
             "HINT_SELECT": "scegli",
             "HINT_OPEN": "apri",
             "HINT_CLOSE": "chiudi"
-        }
+        },
+        "CONTINUE_WATCHING": "Continua a guardare"
     },
     "LOADING": "Caricamento",
     "RETRY": "Riprova",

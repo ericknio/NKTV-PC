@@ -2315,7 +2315,8 @@
             "HINT_SELECT": "seç",
             "HINT_OPEN": "aç",
             "HINT_CLOSE": "kapat"
-        }
+        },
+        "CONTINUE_WATCHING": "İzlemeye Devam Et"
     },
     "LOADING": "Yükleniyor",
     "RETRY": "Yeniden dene",

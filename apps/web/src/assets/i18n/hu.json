@@ -2315,7 +2315,8 @@
             "HINT_SELECT": "kijelölés",
             "HINT_OPEN": "megnyitás",
             "HINT_CLOSE": "bezárás"
-        }
+        },
+        "CONTINUE_WATCHING": "Megtekintés folytatása"
     },
     "LOADING": "Betöltés",
     "RETRY": "Újra",

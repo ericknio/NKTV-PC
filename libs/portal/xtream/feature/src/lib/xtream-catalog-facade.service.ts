@@ -1,4 +1,5 @@
 import { Provider, Injectable, computed, inject } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 import {
     PortalCatalogFacade,
     PortalCatalogItemProgress,
@@ -32,6 +33,7 @@ export class XtreamCatalogFacadeService implements PortalCatalogFacade<
     unknown
 > {
     private readonly xtreamStore = inject(XtreamStore);
+    private readonly translate = inject(TranslateService, { optional: true });
     private readonly logger = createLogger('XtreamCatalogFacade');
 
     readonly provider = 'xtream' as const;
@@ -51,15 +53,25 @@ export class XtreamCatalogFacadeService implements PortalCatalogFacade<
             return null;
         }
         if (Number(selectedId) === -100) {
-            return 'WORKSPACE.CONTINUE_WATCHING';
+            return (
+                this.translate?.instant('WORKSPACE.CONTINUE_WATCHING') ??
+                'Continuar assistindo'
+            );
         }
         const category = this.selectedCategory();
-        return String(
+        const rawTitle = String(
             category?.['name'] ??
                 category?.['title'] ??
                 category?.['category_name'] ??
                 ''
         );
+        if (rawTitle === 'WORKSPACE.CONTINUE_WATCHING') {
+            return (
+                this.translate?.instant('WORKSPACE.CONTINUE_WATCHING') ??
+                'Continuar assistindo'
+            );
+        }
+        return rawTitle;
     });
     readonly continueWatchingItems = computed<
         readonly Record<string, unknown>[]

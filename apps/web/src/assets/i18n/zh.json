@@ -2315,7 +2315,8 @@
             "HINT_SELECT": "选择",
             "HINT_OPEN": "打开",
             "HINT_CLOSE": "关闭"
-        }
+        },
+        "CONTINUE_WATCHING": "继续观看"
     },
     "LOADING": "加载中",
     "RETRY": "重试",

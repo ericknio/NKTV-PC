@@ -319,6 +319,16 @@ export function withSelection() {
                         };
                     }
 
+                    if (Number(categoryId) === CONTINUE_WATCHING_CATEGORY_ID) {
+                        return {
+                            id: CONTINUE_WATCHING_CATEGORY_ID,
+                            category_id: CONTINUE_WATCHING_CATEGORY_ID,
+                            name: 'WORKSPACE.CONTINUE_WATCHING',
+                            category_name: 'WORKSPACE.CONTINUE_WATCHING',
+                            type: store.selectedContentType(),
+                        };
+                    }
+
                     // Access parent store categories (from withContent)
                     const storeAny = store as ParentSelectionStoreLike;
                     const allCategories: XtreamSelectionCategory[] = [

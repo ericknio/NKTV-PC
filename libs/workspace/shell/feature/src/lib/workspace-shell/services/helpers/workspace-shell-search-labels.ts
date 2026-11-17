@@ -25,7 +25,12 @@ export interface SearchScopeContext {
     section: PortalRailSection | null;
     translate: TranslateFn;
     xtreamCategory:
-        | { category_name?: string; name?: string }
+        | {
+              category_name?: string;
+              name?: string;
+              id?: string | number;
+              category_id?: string | number;
+          }
         | null
         | undefined;
     stalkerCategoryName: string;
@@ -98,9 +103,16 @@ export function resolveActiveCategoryLabel(ctx: SearchScopeContext): string {
     }
 
     if (context.provider === 'xtreams') {
+        const name = xtreamCategory?.category_name ?? xtreamCategory?.name;
+        if (
+            name === 'WORKSPACE.CONTINUE_WATCHING' ||
+            Number(xtreamCategory?.id) === -100 ||
+            Number(xtreamCategory?.category_id) === -100
+        ) {
+            return translate('WORKSPACE.CONTINUE_WATCHING');
+        }
         return (
-            xtreamCategory?.category_name ??
-            xtreamCategory?.name ??
+            name ??
             translateRailSection(section, translate)
         );
     }

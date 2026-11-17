@@ -2315,7 +2315,8 @@
             "HINT_SELECT": "вибрати",
             "HINT_OPEN": "відкрити",
             "HINT_CLOSE": "закрити"
-        }
+        },
+        "CONTINUE_WATCHING": "Продовжити перегляд"
     },
     "LOADING": "Завантаження",
     "RETRY": "Повторити",

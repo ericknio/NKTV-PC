@@ -6,7 +6,7 @@ services:
     networks:
       - library
     ports:
-      - "4335:80"
+      - "127.0.0.1:4335:80"
     environment:
       TZ: Europe/Berlin
       IPTVNATOR_STORAGE: none

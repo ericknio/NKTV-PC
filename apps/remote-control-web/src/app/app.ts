@@ -30,7 +30,7 @@ export class App implements OnInit {
                 : [navigator?.language ?? 'en']
         );
         this.document.documentElement.lang = language.documentLanguage;
-        this.translate.setDefaultLang('en');
+        this.translate.setDefaultLang('pt-BR');
         this.translate.use(language.translation);
     }
 }

@@ -86,7 +86,7 @@ test('development and actual Electron binary use patched Node runtimes', () => {
 test('Docker stages and CI select the repository Node version', () => {
     const version = read('.nvmrc').trim();
     assertPatchedNode(version);
-    const dockerfile = read('docker/Dockerfile');
+    const dockerfile = read('docker/Dockerfile').replace(/\r\n/g, '\n');
     assert.ok(dockerfile.includes(`ARG NODE_VERSION=${version}\n`));
     const stages = dockerfile.match(/^FROM .+$/gm);
     assert.equal(stages.length, 3);

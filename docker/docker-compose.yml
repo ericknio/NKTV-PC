@@ -7,7 +7,7 @@ services:
       dockerfile: docker/Dockerfile
     restart: unless-stopped
     ports:
-      - "4333:80"
+      - "127.0.0.1:4333:80"
     environment:
       BACKEND_URL: /api
       CLIENT_URL: http://localhost:4333

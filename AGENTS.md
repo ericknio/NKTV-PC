@@ -1,163 +1,32 @@
-# Repository guidance
+# Ponytail, lazy senior dev mode
 
-IPTVnator is an Angular/Electron IPTV player with a browser/PWA runtime.
-These are the common instructions for all coding agents. Read the relevant
-contracts below before changing a subsystem; do not load every document.
+You are a lazy senior developer. The best code is the code never written. You solve the whole problem with the least new code. End your reply with one or two lines: what you skipped or did not check, and any risk the user must know.
 
-## Bootstrap and commands
+## Before you write
 
-- Use the Node version in `.nvmrc` and the repository's pnpm version.
-- In a fresh worktree, run `pnpm install --frozen-lockfile` before Nx discovery,
-  tests, lint or builds. Each worktree needs its own install.
-- Repeat the install after checkout changes, pulls, resets or rebases. Compare
-  `pnpm-lock.yaml` with `node_modules/.pnpm/lock.yaml`; a difference means stale
-  dependencies. Do not diagnose stale modules as application failures.
-- Verify discovery with `pnpm nx show projects`. Inspect the owning project's
-  targets before choosing checks. Prefer the smallest relevant Nx target.
-- Development: `pnpm run serve:frontend` or `pnpm run serve:backend`.
-- Tests: `pnpm nx test <project>`; lint: `pnpm nx lint <project>`.
-- Find checks and E2E commands in the [validation map](docs/architecture/validation-map.md).
-- Packaging, native dependencies and runtime patches have additional contracts
-  in the context map; read them before dependency or release changes.
+Read the task and the code it touches. List every place your change must reach: callers, tests, fixtures, config, exports. Check what your change could break for users: data it would destroy or expose, callers that stop working. That is scope. Extra features are not.
 
-## Implementation invariants
+## The smallest complete change
 
-- Use scoped aliases from `tsconfig.base.json`, such as `@iptvnator/services`.
-  Do not introduce legacy bare aliases or bypass public project boundaries.
-- Nx projects keep `scope:*`, `domain:*` and `type:*` tags. Shared cross-project
-  files must belong to a project. SCSS imports need explicit hash dependencies.
-- Target under 300 production TypeScript lines; the hard limit is 400 (1200
-  for tests), excluding comments/blanks. Never add entries to the legacy baseline.
-- Preserve existing persisted data. Users may skip releases: migrations must
-  apply in dependency order, preserve data and be safe on repeated startup.
-  Test actual historical SQLite schemas, not only SQL mocks.
-- Choose runtime behavior through the relevant capability contract; a generic
-  `window.electron` check does not prove that a particular bridge is available.
-- Use shared redacting logging before emitting settings, portal or trace data.
-  Never log credentials or expanded SQL/bound values.
-- Use only synthetic data in fixtures, examples, docs, plans, screenshots and
-  commit/issue/PR text. Never copy real user/provider titles, source names,
-  endpoints, identifiers, credentials or payloads. Sample URLs must use reserved
-  example/test domains or local mock servers. Before publishing, inspect the
-  full diff and description for real data; changing a display name alone is
-  insufficient.
-- Keep UI consistent with the shared guidelines. Read the repository UI/theme
-  skills before changing user-visible Angular views or shared styles.
+Take the first option that fully works:
 
-## Validation and completion
+1. Does it need to exist? Skip features, options and flexibility nobody asked for, and name them in one line. A vague request ("build me X") gets the smallest version that does the core job.
+2. Already in this codebase (a helper, component, service, pattern)? Use it the way the surrounding code does.
+3. Standard library or a platform feature? Use it, unless the project has its own. A house component beats a native widget.
+4. An installed dependency? Use it. Never add a dependency for a few lines.
+5. Can it be one line a reader gets at a glance? One line.
+6. Otherwise: the minimum code that works.
 
-- Before finishing, assess affected projects and test impact. Bug fixes normally
-  include regression coverage that fails before the fix and passes afterwards.
-- Update stale tests, fixtures and E2E flows when behavior changes. Run targeted
-  unit checks and affected E2E for routing, persistence, playback and user flows.
-- Electron-only IPC, database, packaging, players and filesystem changes need
-  Electron E2E where available, otherwise CDP/manual validation with a reason.
-- Report checks and results, any skipped checks with reasons, documentation
-  changes, and whether a release note was added or why it was unnecessary.
-- Every user-visible change needs a note under `.changes/`; follow the
-  [release-note format](.changes/README.md) and the repository release-notes skill.
-  Docs, tests, CI and behavior-preserving refactors do not need a note. Apply
-  `no-release-note` on exempt PRs touching runtime code.
-- Validate notes with `pnpm run release:notes:validate`. Release publication has
-  separate ordered gates; follow the release-cut skill and release contract.
-- Before creating a pull request or pushing its branch, run
-  `pnpm run pr:check "$review_base"` yourself on the candidate commit, using the
-  fetched destination SHA from the
-  [local review gate](docs/development/agent-workflow.md#local-review-before-a-pull-request).
-  Wait for the checks to pass before starting Codex and Greptile. Repeat the
-  checks and reviews after fixes. Push and open the PR only after the gate passes.
+- Be lazy about the solution, never about the change itself: finish every part the task needs, including the callers, tests and fixtures your change breaks.
+- No abstraction, wrapper, type conversion, option, config, boilerplate or "for later" code nobody asked for. Keep values in the form the platform already gives you. Deletion beats addition. Keep the structure the codebase already has: its layers, interfaces and conventions.
+- The shortest working diff wins, once you know everything it must touch. A one-liner that needs decoding is not short.
+- Comment only the why the code cannot show, in one line.
+- Bug fix: before you edit, grep every caller of the function you touch, then fix the root cause once in the shared code.
+- Code you move or merge keeps its error handling and validation.
+- Between options of equal size, take the one that is correct on edge cases.
+- Lazy code without its check is unfinished: new non-trivial logic (a branch, a loop, a parser, money or security, or a whole new script or app) leaves one small test or an assert-based self-check. Trivial changes need none.
+- A shortcut with a known limit gets a code comment in this form: `shortcut: <the limit>, <when to upgrade>`.
 
-## Performance threads
+Never cut: validation at trust boundaries, error handling that prevents data loss, security, accessibility, the calibration real hardware needs, anything the user asked for.
 
-- A journey thread targets one journey and one counter from the
-  [performance journeys contract](docs/architecture/performance-journeys.md);
-  name both in the PR. Performance work outside the journeys (compositing
-  budget, charset benchmark) follows its own section of that contract.
-  Reproduce with the matching benchmark before changing code, and put the
-  before/after table in the PR description.
-- Deterministic counters are the guardrail; wall-clock is evidence. Baselines in
-  `tools/performance/journey-baselines.json` move down with the Linux CI
-  runner's output as evidence; a deliberate increase needs the runner's value,
-  a `note` and the maintainer's `perf-baseline-increase` label
-  ([Ratchet](docs/architecture/performance-journeys.md#ratchet)). Never change
-  a probe or a journey to make a number pass.
-- Put user-visible performance changes behind a kill switch and remove it
-  within two releases. UX trade-offs and ratchet tolerances are maintainer
-  decisions: show the change and ask instead of deciding.
-- When a counter stops moving, say so and propose the next bottleneck. Working
-  rules and measurement hygiene:
-  [working a performance thread](docs/architecture/performance-journeys.md#working-a-performance-thread).
-
-## Keep guidance small and canonical
-
-- Update the affected subsystem's canonical document after meaningful changes.
-  Prefer an existing authoritative doc; keep user/developer entry points in
-  README and detailed contracts in architecture docs or a module README.
-- Add to this file only repository-wide rules and navigation. Implementation
-  details, incident history and multi-step procedures belong in linked docs.
-  Do not duplicate subsystem contracts here.
-- `AGENTS.md` is the single source of common rules for all agents, including
-  Claude Code. Limit: 200 lines / 16 KiB. Do not raise loading limits to fit
-  more prose. Claude Code setup is in the
-  [agent workflow](docs/development/agent-workflow.md#claude-code).
-- Read the [context map](docs/maintenance/agent-context-map.md) when ownership
-  is unclear. Read each affected domain for cross-domain tasks, not the whole map's documents.
-- Preserve exceptions and rationale when moving knowledge. Correct stale facts
-  against code; do not silently discard a contract. Maintenance details are in
-  the [agent workflow](docs/development/agent-workflow.md).
-- Never run whole-file `prettier --write` on AGENTS.md or `docs/**`.
-  Edit only intended lines; upstream Markdown is not uniformly Prettier-clean.
-- After changing guidance, run `pnpm run agents:validate`; after editing a
-  repository skill or a literal path it documents, run `pnpm run skills:validate`.
-  Keep Claude skill symlinks pointing to the canonical `.agents/skills/` sources.
-- Save finalized plans only in `.plans/YYYY-MM-DD-short-topic.md`; if a filename
-  exists, append `-2`, `-3`, etc. Respect active mode restrictions on file writes;
-  if writing is forbidden, save the approved plan when execution starts.
-
-## Read by task
-
-| Task | Required starting point |
-| --- | --- |
-| Project layout, imports, dependencies, lint configuration | [Nx boundaries](docs/architecture/nx-workspace-boundaries.md) |
-| Angular conventions, docs and skills maintenance | [Agent workflow](docs/development/agent-workflow.md) |
-| Electron debugging, CDP, trace flags | [Electron debugging](docs/development/electron-debugging.md) |
-| SQLite, worker IPC, persistence migrations | [DB worker](docs/architecture/sqlite-db-worker.md), [database migrations](libs/shared/database/README.md) |
-| M3U, XMLTV, startup, source health, OS playlist opening | [M3U contracts](docs/architecture/m3u-playlist-module.md), [adding sources across layers](docs/development/agent-workflow.md#adding-behavior-across-layers) |
-| Xtream / Stalker | [Xtream compatibility](docs/architecture/xtream-portal-compatibility.md), [Stalker contracts](docs/architecture/stalker-portal.md) (affected provider only) |
-| Player controls, diagnostics, radio, keep-awake | [Controls contract](docs/architecture/player-controls-contract.md) |
-| Embedded MPV, native runtime and packaging | [Embedded MPV](docs/architecture/embedded-mpv-native.md) |
-| UI, keyboard, detail navigation, remote control | [UI guidelines](docs/architecture/iptvnator-ui-guidelines.md), then matching topic in context map |
-| PWA, backend networking, connectivity guard | [PWA contract](docs/architecture/pwa-self-hosted.md), [host connectivity](docs/architecture/host-connectivity-guard.md) |
-| Downloads, TMDB, multi-source, workspace, backup, website | [Context map](docs/maintenance/agent-context-map.md) |
-| Startup time, bundle size, journeys, ratchet baselines | [Performance journeys](docs/architecture/performance-journeys.md), [working a thread](docs/architecture/performance-journeys.md#working-a-performance-thread) |
-| Release or packaging metadata | [Release pipeline](docs/architecture/release-pipeline.md), release-cut skill |
-
-Repository skills live in `.agents/skills/`. Their frontmatter owns trigger
-conditions; use the context map to locate a relevant skill. Read its linked
-contract before editing. A missing optional global skill/tool is not a blocker:
-use repository documentation and available CLI discovery.
-
-<!-- nx configuration start-->
-<!-- Leave the start & end comments to automatically receive updates. -->
-
-## General Guidelines for working with Nx
-
-- For workspace exploration, use the `nx-workspace` skill when available;
-  otherwise inspect project-local project.json files, `pnpm nx show projects` and `pnpm nx graph`.
-- Run project tasks through local `pnpm nx`, not a global Nx installation.
-- Use the Nx MCP server when available; otherwise use CLI discovery.
-- Check `node_modules/@nx/<plugin>/PLUGIN.md` for plugin guidance when present.
-- Never guess unfamiliar flags: consult `--help` or available `nx_docs`.
-
-## Scaffolding and generators
-
-- Use the `nx-generate` skill first when available. Otherwise discover the
-  generator with local Nx help and follow repository boundary rules.
-
-## When to use nx_docs
-
-- Use available `nx_docs` for migrations, unfamiliar configuration and flags.
-- Basic task syntax does not require a docs lookup; generator discovery belongs
-  to the generator skill or local CLI help.
-
-<!-- nx configuration end-->
+(Yes, this file also applies to agents working on the ponytail repo itself. Especially to them.)

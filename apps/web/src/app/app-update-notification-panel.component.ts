@@ -2,15 +2,17 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    inject,
     OnDestroy,
     OnInit,
     signal,
 } from '@angular/core';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import {
     ELECTRON_BRIDGE_APP_UPDATE_STATUSES,
     ElectronBridgeAppUpdateStatus,
 } from '@iptvnator/shared/interfaces';
+import { DialogService } from '@iptvnator/ui/components';
 import { AppUpdateNotificationCardComponent } from './app-update-notification-card.component';
 import { PwaUpdateNotificationComponent } from './pwa-update-notification.component';
 import { shouldEnableServiceWorker } from './services/runtime-config';
@@ -63,6 +65,16 @@ export class AppUpdateNotificationPanelComponent implements OnInit, OnDestroy {
     readonly browserUpdates = shouldEnableServiceWorker();
     reloadWindow = () => window.location.reload();
     private unsubscribeStatus: (() => void) | null = null;
+    private promptedVersion: string | null = null;
+
+    private readonly dialogService = inject(DialogService, { optional: true });
+    private readonly translate = (() => {
+        try {
+            return inject(TranslateService, { optional: true });
+        } catch {
+            return null;
+        }
+    })();
 
     readonly status = signal<ElectronBridgeAppUpdateStatus | null>(null);
     readonly dismissedVersion = signal<string | null>(null);
@@ -98,10 +110,12 @@ export class AppUpdateNotificationPanelComponent implements OnInit, OnDestroy {
         this.unsubscribeStatus =
             window.electron.onAppUpdateStatusChange?.((status) => {
                 this.status.set(status);
+                this.promptUpdateIfAvailable(status);
             }) ?? null;
 
         void window.electron.getAppUpdateStatus().then((status) => {
             this.status.set(status);
+            this.promptUpdateIfAvailable(status);
         });
     }
 
@@ -112,5 +126,62 @@ export class AppUpdateNotificationPanelComponent implements OnInit, OnDestroy {
 
     dismiss(): void {
         this.dismissedVersion.set(this.status()?.latestVersion ?? null);
+    }
+
+    private promptUpdateIfAvailable(
+        status: ElectronBridgeAppUpdateStatus | null
+    ): void {
+        if (
+            status?.status !== ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Available ||
+            !status.latestVersion ||
+            this.promptedVersion === status.latestVersion
+        ) {
+            return;
+        }
+
+        this.promptedVersion = status.latestVersion;
+
+        if (!this.dialogService) {
+            return;
+        }
+
+        const title =
+            this.translate?.instant('SETTINGS.APP_UPDATE_TITLE') ??
+            'Atualização do aplicativo';
+        const availableText =
+            this.translate?.instant('SETTINGS.APP_UPDATE_AVAILABLE', {
+                version: status.latestVersion,
+            }) ?? `Versão ${status.latestVersion} disponível`;
+        const promptQuestion =
+            this.translate?.currentLang?.startsWith('pt') ||
+            !this.translate?.currentLang
+                ? 'Deseja atualizar agora?'
+                : 'Would you like to update now?';
+        const message = `${availableText}. ${promptQuestion}`;
+        const confirmLabel =
+            this.translate?.instant('SETTINGS.APP_UPDATE_DOWNLOAD') ??
+            'Atualizar';
+        const cancelLabel =
+            this.translate?.instant('CANCEL') ?? 'Cancelar';
+
+        void this.dialogService.openConfirmDialog({
+            title,
+            message,
+            confirmLabel,
+            cancelLabel,
+            onConfirm: () => {
+                if (!status.supportedSelfUpdate && status.manualDownloadUrl) {
+                    window.open(status.manualDownloadUrl, '_blank', 'noreferrer');
+                    return;
+                }
+                if (window.electron?.downloadAppUpdate) {
+                    void window.electron.downloadAppUpdate().then((newStatus) => {
+                        if (newStatus) {
+                            this.status.set(newStatus);
+                        }
+                    });
+                }
+            },
+        });
     }
 }

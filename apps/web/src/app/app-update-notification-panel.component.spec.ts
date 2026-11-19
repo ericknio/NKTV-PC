@@ -14,6 +14,7 @@ import {
     ELECTRON_BRIDGE_APP_UPDATE_STATUSES,
     ElectronBridgeAppUpdateStatus,
 } from '@iptvnator/shared/interfaces';
+import { DialogService } from '@iptvnator/ui/components';
 import { AppUpdateNotificationCardComponent } from './app-update-notification-card.component';
 import { AppUpdateNotificationPanelComponent } from './app-update-notification-panel.component';
 import { AppUpdateReleaseNotesDialogComponent } from './settings/app-update-release-notes-dialog.component';
@@ -32,9 +33,11 @@ describe('AppUpdateNotificationPanelComponent', () => {
     let fixture: ComponentFixture<AppUpdateNotificationPanelComponent>;
     const originalElectron = window.electron;
     let statusHandler: ((status: ElectronBridgeAppUpdateStatus) => void) | null;
+    let openConfirmDialog: jest.Mock;
 
     beforeEach(async () => {
         statusHandler = null;
+        openConfirmDialog = jest.fn().mockResolvedValue(undefined);
         window.electron = {
             downloadAppUpdate: jest.fn().mockResolvedValue({
                 ...availableStatus,
@@ -60,6 +63,10 @@ describe('AppUpdateNotificationPanelComponent', () => {
                 {
                     provide: MatDialog,
                     useValue: { open: jest.fn() },
+                },
+                {
+                    provide: DialogService,
+                    useValue: { openConfirmDialog },
                 },
             ],
         }).compileComponents();
@@ -242,6 +249,7 @@ describe('AppUpdateNotificationPanelComponent', () => {
             providers: [
                 { provide: MatDialog, useValue: { open: jest.fn() } },
                 { provide: SwUpdate, useValue: { isEnabled: false } },
+                { provide: DialogService, useValue: { openConfirmDialog } },
             ],
             deferBlockBehavior: DeferBlockBehavior.Manual,
         }).compileComponents();
@@ -300,6 +308,29 @@ describe('AppUpdateNotificationPanelComponent', () => {
             'noreferrer'
         );
         open.mockRestore();
+    });
+
+    it('prompts the user with a confirmation dialog when an update is available', async () => {
+        await showUpdate(availableStatus);
+
+        expect(openConfirmDialog).toHaveBeenCalledTimes(1);
+        const dialogData = openConfirmDialog.mock.calls[0][0];
+        expect(dialogData.confirmLabel).toBe('SETTINGS.APP_UPDATE_DOWNLOAD');
+        expect(dialogData.cancelLabel).toBe('CANCEL');
+        expect(dialogData.message).toContain('SETTINGS.APP_UPDATE_AVAILABLE');
+
+        // Confirming starts the download
+        dialogData.onConfirm();
+        expect(window.electron.downloadAppUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it('only prompts the confirmation dialog once per available version', async () => {
+        await showUpdate(availableStatus);
+        expect(openConfirmDialog).toHaveBeenCalledTimes(1);
+
+        // Subsequent status broadcast with the same version does not re-open the dialog
+        await showUpdate(availableStatus);
+        expect(openConfirmDialog).toHaveBeenCalledTimes(1);
     });
 });
 

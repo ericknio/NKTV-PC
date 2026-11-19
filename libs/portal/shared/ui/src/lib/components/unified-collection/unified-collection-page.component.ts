@@ -1,4 +1,5 @@
 import { EpgPreferencesService } from '@iptvnator/services';
+import { observeActivityChanges } from '@iptvnator/services/activity-changes';
 import {
     isCatalogUnavailable,
     XTREAM_FAVORITE_IDENTITY_CONFLICT,
@@ -262,6 +263,18 @@ export class UnifiedCollectionPageComponent implements AfterContentInit {
     readonly isDetailPending = this.detailState.isPending;
 
     constructor() {
+        inject(DestroyRef).onDestroy(
+            observeActivityChanges(() => {
+                if (this.mode() === 'recent') {
+                    void this.loadData({
+                        mode: 'recent',
+                        portalType: this.portalType(),
+                        playlistId: this.playlistId(),
+                        scope: this.effectiveScope(),
+                    });
+                }
+            })
+        );
         setupClearCollectionViewCommand({
             mode: this.mode,
             selectedContentType: this.selectedContentType,

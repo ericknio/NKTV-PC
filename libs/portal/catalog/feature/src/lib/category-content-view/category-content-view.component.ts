@@ -20,13 +20,14 @@ import { MatIcon } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltip } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import {
     GridListComponent,
     InfiniteScrollDirective,
     PlaylistErrorViewComponent,
 } from '@iptvnator/portal/shared/ui';
 import {
+    DialogService,
     MenuItemRadioCheckDirective,
     MenuItemRadioDirective,
 } from '@iptvnator/ui/components';
@@ -84,6 +85,14 @@ export class CategoryContentViewComponent implements OnInit, OnDestroy {
     private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
     private readonly gridList = viewChild(GridListComponent);
     private readonly router = inject(Router);
+    private readonly dialogService = inject(DialogService, { optional: true });
+    private readonly translate = (() => {
+        try {
+            return inject(TranslateService, { optional: true });
+        } catch {
+            return null;
+        }
+    })();
     private readonly focus = createCatalogReturnFocus(this.host.nativeElement);
     private readonly catalog = inject(
         PORTAL_CATALOG_FACADE
@@ -205,6 +214,46 @@ export class CategoryContentViewComponent implements OnInit, OnDestroy {
         const target = event.target as HTMLImageElement;
         if (target && !target.src.includes('default-poster.png')) {
             target.src = './assets/images/default-poster.png';
+        }
+    }
+    clearContinueWatching(): void {
+        const items = this.continueWatchingItems();
+        if (!items || items.length === 0) {
+            return;
+        }
+
+        const type = this.contentType() === 'series'
+            ? (this.translate?.instant('PORTALS.SERIES') ?? 'séries')
+            : (this.translate?.instant('PORTALS.MOVIES') ?? 'filmes');
+
+        const title =
+            this.translate?.instant(
+                'WORKSPACE.SHELL.CLEAR_RECENTLY_VIEWED_TYPE',
+                { type }
+            ) ?? 'Limpar continuar assistindo';
+        const message =
+            this.translate?.instant(
+                'WORKSPACE.CLEAR_RECENT_DIALOG.MESSAGE_PLAYLIST',
+                { type }
+            ) ?? 'Deseja limpar os itens de continuar assistindo?';
+        const confirmLabel = this.translate?.instant('CLEAR') ?? 'Limpar';
+
+        const doClear = async () => {
+            if (this.catalog.clearContinueWatching) {
+                await this.catalog.clearContinueWatching();
+            }
+        };
+
+        if (this.dialogService) {
+            this.dialogService.openConfirmDialog({
+                title,
+                message,
+                confirmLabel,
+                tone: 'destructive',
+                onConfirm: doClear,
+            });
+        } else {
+            void doClear();
         }
     }
     /**

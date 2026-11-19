@@ -78,6 +78,34 @@ export async function savePlaybackPosition(
         await db.insert(schema.playbackPositions).values(values);
     }
 
+    if (data.positionSeconds > 0 && typeof (db as any).run === 'function') {
+        try {
+            if (data.contentType === 'vod') {
+                (db as any).run(sql`
+                    INSERT INTO recently_viewed (content_id, playlist_id, viewed_at)
+                    SELECT c.id, ${playlistId}, CURRENT_TIMESTAMP
+                    FROM content c
+                    JOIN categories cat ON c.category_id = cat.id AND cat.playlist_id = ${playlistId}
+                    WHERE c.xtream_id = ${data.contentXtreamId} AND c.type = 'vod'
+                    ON CONFLICT(content_id, playlist_id) DO UPDATE SET
+                    viewed_at = CURRENT_TIMESTAMP;
+                `);
+            } else if (data.contentType === 'episode' && data.seriesXtreamId) {
+                (db as any).run(sql`
+                    INSERT INTO recently_viewed (content_id, playlist_id, viewed_at)
+                    SELECT c.id, ${playlistId}, CURRENT_TIMESTAMP
+                    FROM content c
+                    JOIN categories cat ON c.category_id = cat.id AND cat.playlist_id = ${playlistId}
+                    WHERE c.xtream_id = ${data.seriesXtreamId} AND c.type = 'series'
+                    ON CONFLICT(content_id, playlist_id) DO UPDATE SET
+                    viewed_at = CURRENT_TIMESTAMP;
+                `);
+            }
+        } catch {
+            // ignore
+        }
+    }
+
     return { success: true };
 }
 
@@ -130,6 +158,38 @@ export async function savePlaybackPositionsBatch(
                 })
                 .run();
         }
+
+        if (typeof (db as any).run === 'function') {
+            try {
+                for (const item of items) {
+                    if (item.positionSeconds > 0) {
+                        if (item.contentType === 'vod') {
+                            (db as any).run(sql`
+                                INSERT INTO recently_viewed (content_id, playlist_id, viewed_at)
+                                SELECT c.id, ${playlistId}, CURRENT_TIMESTAMP
+                                FROM content c
+                                JOIN categories cat ON c.category_id = cat.id AND cat.playlist_id = ${playlistId}
+                                WHERE c.xtream_id = ${item.contentXtreamId} AND c.type = 'vod'
+                                ON CONFLICT(content_id, playlist_id) DO UPDATE SET
+                                viewed_at = CURRENT_TIMESTAMP;
+                            `);
+                        } else if (item.contentType === 'episode' && item.seriesXtreamId) {
+                            (db as any).run(sql`
+                                INSERT INTO recently_viewed (content_id, playlist_id, viewed_at)
+                                SELECT c.id, ${playlistId}, CURRENT_TIMESTAMP
+                                FROM content c
+                                JOIN categories cat ON c.category_id = cat.id AND cat.playlist_id = ${playlistId}
+                                WHERE c.xtream_id = ${item.seriesXtreamId} AND c.type = 'series'
+                                ON CONFLICT(content_id, playlist_id) DO UPDATE SET
+                                viewed_at = CURRENT_TIMESTAMP;
+                            `);
+                        }
+                    }
+                }
+            } catch {
+                // ignore
+            }
+        }
     });
 
     return { success: true, count: items.length };
@@ -142,6 +202,47 @@ export async function clearPlaybackPositionsBatch(
 ): Promise<{ success: boolean; count: number }> {
     if (!Array.isArray(items) || items.length === 0) {
         return { success: true, count: 0 };
+    }
+
+    if (typeof (db as any).run === 'function') {
+        try {
+            for (const { contentXtreamId, contentType } of items) {
+                if (contentType === 'vod') {
+                    (db as any).run(sql`
+                        DELETE FROM recently_viewed
+                        WHERE playlist_id = ${playlistId}
+                        AND content_id IN (
+                            SELECT c.id FROM content c
+                            JOIN categories cat ON c.category_id = cat.id AND cat.playlist_id = ${playlistId}
+                            WHERE c.xtream_id = ${contentXtreamId} AND c.type = 'vod'
+                        );
+                    `);
+                } else if (contentType === 'episode') {
+                    (db as any).run(sql`
+                        DELETE FROM recently_viewed
+                        WHERE playlist_id = ${playlistId}
+                        AND content_id IN (
+                            SELECT c.id FROM content c
+                            JOIN categories cat ON c.category_id = cat.id AND cat.playlist_id = ${playlistId}
+                            WHERE c.type = 'series' AND c.xtream_id IN (
+                                SELECT p1.series_xtream_id FROM playback_positions p1
+                                WHERE p1.playlist_id = ${playlistId} AND p1.content_xtream_id = ${contentXtreamId} AND p1.content_type = 'episode'
+                                AND NOT EXISTS (
+                                    SELECT 1 FROM playback_positions p2
+                                    WHERE p2.playlist_id = ${playlistId}
+                                    AND p2.series_xtream_id = p1.series_xtream_id
+                                    AND p2.content_xtream_id != p1.content_xtream_id
+                                    AND p2.content_type = 'episode'
+                                    AND p2.position_seconds > 0
+                                )
+                            )
+                        );
+                    `);
+                }
+            }
+        } catch {
+            // ignore
+        }
     }
 
     const stmt = db
@@ -289,6 +390,45 @@ export async function clearPlaybackPosition(
     contentXtreamId: number,
     contentType: 'vod' | 'episode'
 ): Promise<{ success: boolean }> {
+    if (typeof (db as any).run === 'function') {
+        try {
+            if (contentType === 'vod') {
+                (db as any).run(sql`
+                    DELETE FROM recently_viewed
+                    WHERE playlist_id = ${playlistId}
+                    AND content_id IN (
+                        SELECT c.id FROM content c
+                        JOIN categories cat ON c.category_id = cat.id AND cat.playlist_id = ${playlistId}
+                        WHERE c.xtream_id = ${contentXtreamId} AND c.type = 'vod'
+                    );
+                `);
+            } else if (contentType === 'episode') {
+                (db as any).run(sql`
+                    DELETE FROM recently_viewed
+                    WHERE playlist_id = ${playlistId}
+                    AND content_id IN (
+                        SELECT c.id FROM content c
+                        JOIN categories cat ON c.category_id = cat.id AND cat.playlist_id = ${playlistId}
+                        WHERE c.type = 'series' AND c.xtream_id IN (
+                            SELECT p1.series_xtream_id FROM playback_positions p1
+                            WHERE p1.playlist_id = ${playlistId} AND p1.content_xtream_id = ${contentXtreamId} AND p1.content_type = 'episode'
+                            AND NOT EXISTS (
+                                SELECT 1 FROM playback_positions p2
+                                WHERE p2.playlist_id = ${playlistId}
+                                AND p2.series_xtream_id = p1.series_xtream_id
+                                AND p2.content_xtream_id != p1.content_xtream_id
+                                AND p2.content_type = 'episode'
+                                AND p2.position_seconds > 0
+                            )
+                        )
+                    );
+                `);
+            }
+        } catch {
+            // ignore
+        }
+    }
+
     await db
         .delete(schema.playbackPositions)
         .where(

@@ -52,8 +52,14 @@ export function createCollectionContentTypeState(
         return types;
     });
 
+    const activeType = computed(() => {
+        const types = availableTypes();
+        const sel = selected();
+        return types.length > 0 && !types.includes(sel) ? types[0] : sel;
+    });
+
     const currentTypeItems = computed(() => {
-        switch (selected()) {
+        switch (activeType()) {
             case 'live':
                 return liveItems();
             case 'movie':
@@ -64,7 +70,7 @@ export function createCollectionContentTypeState(
     });
 
     const currentTypeLabelKey = computed(() => {
-        switch (selected()) {
+        switch (activeType()) {
             case 'live':
                 return 'PORTALS.LIVE_TV';
             case 'movie':

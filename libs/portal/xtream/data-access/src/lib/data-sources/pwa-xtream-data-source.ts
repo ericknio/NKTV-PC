@@ -935,10 +935,40 @@ export class PwaXtreamDataSource implements IXtreamDataSource {
         removePwaRecentItem(this.collectionStorage, playlistId, (ids) =>
             this.getMatchingCollectionKeys(playlistId, ids, normalizedContentId)
         );
+
+        const id =
+            typeof contentId === 'number'
+                ? contentId
+                : (contentId.providerId ?? contentId.id);
+        const type = typeof contentId === 'number' ? undefined : contentId.type;
+        if (id != null) {
+            const positions = await this.playbackPositions();
+            if (type === 'movie') {
+                await positions.clearPlaybackPosition(playlistId, id, 'vod');
+            } else if (type === 'series') {
+                const seriesPos = await positions.getSeriesPlaybackPositions(
+                    playlistId,
+                    id
+                );
+                if (seriesPos.length > 0) {
+                    await positions.clearPlaybackPositionsBatch(
+                        playlistId,
+                        seriesPos.map((p) => ({
+                            contentXtreamId: p.contentXtreamId,
+                            contentType: 'episode',
+                        }))
+                    );
+                }
+            } else if (type === undefined) {
+                await positions.clearPlaybackPosition(playlistId, id, 'vod');
+                await positions.clearPlaybackPosition(playlistId, id, 'episode');
+            }
+        }
     }
 
     async clearRecentItems(playlistId: string): Promise<void> {
         this.collectionStorage.clearRecentItemsForPlaylist(playlistId);
+        this.clearPlaybackPositionsForPlaylist(playlistId);
     }
 
     /** Match original keys even when optional migration could not fit in storage. */

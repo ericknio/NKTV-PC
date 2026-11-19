@@ -126,6 +126,7 @@ export interface PortalCatalogFacade<
      * background. No-op for providers whose selections are always fresh.
      */
     refreshSnapshotSelection?(): void;
+    clearContinueWatching?(): Promise<void>;
     getItemProgress(item: TItem): PortalCatalogItemProgress;
 }
 

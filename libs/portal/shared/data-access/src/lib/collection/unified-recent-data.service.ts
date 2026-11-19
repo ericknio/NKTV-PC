@@ -1,5 +1,6 @@
 import { stalkerFavoriteReference } from '@iptvnator/shared/interfaces/favorites-sync';
 import { HISTORY_PLAYLIST_BRIDGE } from '@iptvnator/services/history-events';
+import { announceActivityChange } from '@iptvnator/services/activity-changes';
 import { inject, Injectable } from '@angular/core';
 import {
     buildStalkerRecentlyViewedPayload,
@@ -71,50 +72,54 @@ export class UnifiedRecentDataService {
     }
 
     async removeRecentItem(item: UnifiedCollectionItem): Promise<void> {
-        if (item.sourceType === 'xtream') {
-            const contentId =
-                item.contentId ?? (await this.resolveXtreamContentId(item));
-            if (contentId == null) {
-                return;
-            }
+        try {
+            if (item.sourceType === 'xtream') {
+                const contentId =
+                    item.contentId ?? (await this.resolveXtreamContentId(item));
+                if (contentId == null) {
+                    return;
+                }
 
-            if (this.hasPortalActivityStorage) {
-                await this.dbService.removeRecentItem(
-                    contentId,
+                if (this.hasPortalActivityStorage) {
+                    await this.dbService.removeRecentItem(
+                        contentId,
+                        item.playlistId
+                    );
+                    return;
+                }
+
+                await this.xtreamDataSource.removeRecentItem(
+                    {
+                        id: contentId,
+                        type: item.contentType,
+                        providerId: item.xtreamId,
+                    },
                     item.playlistId
                 );
                 return;
             }
 
-            await this.xtreamDataSource.removeRecentItem(
-                {
-                    id: contentId,
-                    type: item.contentType,
-                    providerId: item.xtreamId,
-                },
-                item.playlistId
-            );
-            return;
-        }
+            if (item.sourceType === 'm3u') {
+                const updatedPlaylist = await firstValueFrom(
+                    this.playlistsService.removeFromM3uRecentlyViewed(
+                        item.playlistId,
+                        item.streamUrl ?? item.uid.split('::')[2]
+                    )
+                );
+                this.dispatchPlaylistRecentUpdate(item.playlistId, updatedPlaylist);
+                return;
+            }
 
-        if (item.sourceType === 'm3u') {
             const updatedPlaylist = await firstValueFrom(
-                this.playlistsService.removeFromM3uRecentlyViewed(
+                this.playlistsService.removeFromPortalRecentlyViewed(
                     item.playlistId,
-                    item.streamUrl ?? item.uid.split('::')[2]
+                    item.stalkerItem ?? item.stalkerId ?? item.uid.split('::')[2]
                 )
             );
             this.dispatchPlaylistRecentUpdate(item.playlistId, updatedPlaylist);
-            return;
+        } finally {
+            announceActivityChange();
         }
-
-        const updatedPlaylist = await firstValueFrom(
-            this.playlistsService.removeFromPortalRecentlyViewed(
-                item.playlistId,
-                item.stalkerItem ?? item.stalkerId ?? item.uid.split('::')[2]
-            )
-        );
-        this.dispatchPlaylistRecentUpdate(item.playlistId, updatedPlaylist);
     }
 
     /**
@@ -214,57 +219,62 @@ export class UnifiedRecentDataService {
         }
 
         await Promise.all(tasks);
+        announceActivityChange();
     }
 
     async clearRecentItems(
         scope: CollectionScope,
         playlistId?: string
     ): Promise<void> {
-        if (scope === 'playlist' && playlistId) {
-            if (this.hasPortalActivityStorage) {
-                await this.dbService.clearPlaylistRecentItems(playlistId);
-            } else {
-                await this.xtreamDataSource.clearRecentItems(playlistId);
-            }
-            const updatedPlaylist = await firstValueFrom(
-                this.playlistsService.clearPlaylistRecentlyViewed(playlistId)
-            );
-            this.dispatchPlaylistRecentUpdate(playlistId, updatedPlaylist);
-            return;
-        }
-
-        if (this.hasPortalActivityStorage) {
-            await this.dbService.clearGlobalRecentlyViewed();
-        } else {
-            const allMeta = await this.getAllMeta();
-            await Promise.all(
-                allMeta
-                    .filter((playlist) => playlist._id)
-                    .filter((playlist) => this.isXtreamPlaylist(playlist))
-                    .map((playlist) =>
-                        this.xtreamDataSource.clearRecentItems(playlist._id)
-                    )
-            );
-        }
-        const playlists = (await firstValueFrom(
-            this.playlistsService.getAllPlaylists()
-        )) as Playlist[];
-
-        await Promise.all(
-            playlists.map(async (playlist) => {
-                if (this.isPlaylistBackedRecentPlaylist(playlist)) {
-                    const updatedPlaylist = await firstValueFrom(
-                        this.playlistsService.clearPlaylistRecentlyViewed(
-                            playlist._id
-                        )
-                    );
-                    this.dispatchPlaylistRecentUpdate(
-                        playlist._id,
-                        updatedPlaylist
-                    );
+        try {
+            if (scope === 'playlist' && playlistId) {
+                if (this.hasPortalActivityStorage) {
+                    await this.dbService.clearPlaylistRecentItems(playlistId);
+                } else {
+                    await this.xtreamDataSource.clearRecentItems(playlistId);
                 }
-            })
-        );
+                const updatedPlaylist = await firstValueFrom(
+                    this.playlistsService.clearPlaylistRecentlyViewed(playlistId)
+                );
+                this.dispatchPlaylistRecentUpdate(playlistId, updatedPlaylist);
+                return;
+            }
+
+            if (this.hasPortalActivityStorage) {
+                await this.dbService.clearGlobalRecentlyViewed();
+            } else {
+                const allMeta = await this.getAllMeta();
+                await Promise.all(
+                    allMeta
+                        .filter((playlist) => playlist._id)
+                        .filter((playlist) => this.isXtreamPlaylist(playlist))
+                        .map((playlist) =>
+                            this.xtreamDataSource.clearRecentItems(playlist._id)
+                        )
+                );
+            }
+            const playlists = (await firstValueFrom(
+                this.playlistsService.getAllPlaylists()
+            )) as Playlist[];
+
+            await Promise.all(
+                playlists.map(async (playlist) => {
+                    if (this.isPlaylistBackedRecentPlaylist(playlist)) {
+                        const updatedPlaylist = await firstValueFrom(
+                            this.playlistsService.clearPlaylistRecentlyViewed(
+                                playlist._id
+                            )
+                        );
+                        this.dispatchPlaylistRecentUpdate(
+                            playlist._id,
+                            updatedPlaylist
+                        );
+                    }
+                })
+            );
+        } finally {
+            announceActivityChange();
+        }
     }
 
     async recordLivePlayback(

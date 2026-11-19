@@ -190,8 +190,7 @@ export default class Main {
             .catch(() => undefined);
         await loadingMainWindow;
         const { module, result } = await deferred.trigger();
-        // Update checks disabled for NKTV
-        // void result.appUpdateService.checkForUpdatesOnStartup();
+        void result.appUpdateService.checkForUpdatesOnStartup();
 
         await module.finishStartupAfterFirstLoad();
 

@@ -433,6 +433,16 @@
                             <span class="continue-watching-rail__title">{{
                                 'WORKSPACE.CONTINUE_WATCHING' | translate
                             }}</span>
+                            <button
+                                type="button"
+                                mat-icon-button
+                                class="continue-watching-rail__clear"
+                                (click)="clearContinueWatching()"
+                                [matTooltip]="'CLEAR' | translate"
+                                [attr.aria-label]="'CLEAR' | translate"
+                            >
+                                <mat-icon>delete_sweep</mat-icon>
+                            </button>
                         </div>
                         <div class="continue-watching-rail__track">
                             @for (

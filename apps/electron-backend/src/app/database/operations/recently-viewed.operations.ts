@@ -8,7 +8,64 @@ import {
     removeRecoveredHistory,
 } from './xtream-history-recovery';
 
+export function syncPlaybackPositionsToRecent(
+    db: AppDatabase,
+    playlistId?: string
+): void {
+    if (typeof (db as any).run !== 'function') return;
+    try {
+        if (playlistId) {
+            (db as any).run(sql`
+                INSERT INTO recently_viewed (content_id, playlist_id, viewed_at)
+                SELECT c.id, p.playlist_id, p.updated_at
+                FROM playback_positions p
+                JOIN content c ON c.xtream_id = p.content_xtream_id AND c.type = 'vod'
+                JOIN categories cat ON c.category_id = cat.id AND cat.playlist_id = p.playlist_id
+                WHERE p.position_seconds > 0 AND p.playlist_id = ${playlistId}
+                ON CONFLICT(content_id, playlist_id) DO UPDATE SET
+                viewed_at = CASE WHEN excluded.viewed_at > recently_viewed.viewed_at THEN excluded.viewed_at ELSE recently_viewed.viewed_at END;
+            `);
+            (db as any).run(sql`
+                INSERT INTO recently_viewed (content_id, playlist_id, viewed_at)
+                SELECT c.id, p.playlist_id, MAX(p.updated_at)
+                FROM playback_positions p
+                JOIN content c ON c.xtream_id = p.series_xtream_id AND c.type = 'series'
+                JOIN categories cat ON c.category_id = cat.id AND cat.playlist_id = p.playlist_id
+                WHERE p.position_seconds > 0 AND p.series_xtream_id IS NOT NULL AND p.playlist_id = ${playlistId}
+                GROUP BY c.id, p.playlist_id
+                ON CONFLICT(content_id, playlist_id) DO UPDATE SET
+                viewed_at = CASE WHEN excluded.viewed_at > recently_viewed.viewed_at THEN excluded.viewed_at ELSE recently_viewed.viewed_at END;
+            `);
+        } else {
+            (db as any).run(sql`
+                INSERT INTO recently_viewed (content_id, playlist_id, viewed_at)
+                SELECT c.id, p.playlist_id, p.updated_at
+                FROM playback_positions p
+                JOIN content c ON c.xtream_id = p.content_xtream_id AND c.type = 'vod'
+                JOIN categories cat ON c.category_id = cat.id AND cat.playlist_id = p.playlist_id
+                WHERE p.position_seconds > 0
+                ON CONFLICT(content_id, playlist_id) DO UPDATE SET
+                viewed_at = CASE WHEN excluded.viewed_at > recently_viewed.viewed_at THEN excluded.viewed_at ELSE recently_viewed.viewed_at END;
+            `);
+            (db as any).run(sql`
+                INSERT INTO recently_viewed (content_id, playlist_id, viewed_at)
+                SELECT c.id, p.playlist_id, MAX(p.updated_at)
+                FROM playback_positions p
+                JOIN content c ON c.xtream_id = p.series_xtream_id AND c.type = 'series'
+                JOIN categories cat ON c.category_id = cat.id AND cat.playlist_id = p.playlist_id
+                WHERE p.position_seconds > 0 AND p.series_xtream_id IS NOT NULL
+                GROUP BY c.id, p.playlist_id
+                ON CONFLICT(content_id, playlist_id) DO UPDATE SET
+                viewed_at = CASE WHEN excluded.viewed_at > recently_viewed.viewed_at THEN excluded.viewed_at ELSE recently_viewed.viewed_at END;
+            `);
+        }
+    } catch {
+        // Safe fallback if tables don't exist yet
+    }
+}
+
 export async function getRecentlyViewed(db: AppDatabase) {
+    syncPlaybackPositionsToRecent(db);
     return db
         .select({
             id: schema.content.id,
@@ -51,6 +108,7 @@ export async function clearRecentlyViewed(
 ): Promise<{ success: boolean }> {
     db.transaction((tx) => {
         tx.delete(schema.recentlyViewed).run();
+        tx.delete(schema.playbackPositions).run();
         clearRecoveredHistory(tx);
     });
     return { success: true };
@@ -61,6 +119,7 @@ export async function getRecentItems(
     playlistId: string,
     all = false
 ) {
+    syncPlaybackPositionsToRecent(db, playlistId);
     const query = db
         .select({
             id: schema.content.id,
@@ -156,6 +215,15 @@ export async function clearPlaylistRecentItems(
         tx.delete(schema.recentlyViewed)
             .where(inArray(schema.recentlyViewed.contentId, contentIds))
             .run();
+        if (typeof (tx as any).run === 'function') {
+            try {
+                (tx as any).run(
+                    sql`DELETE FROM playback_positions WHERE playlist_id = ${playlistId}`
+                );
+            } catch {
+                // ignore
+            }
+        }
         clearRecoveredHistory(tx, playlistId);
     });
 
@@ -177,6 +245,22 @@ export async function removeRecentItem(
                 )
             )
             .run();
+
+        if (typeof (tx as any).run === 'function') {
+            try {
+                (tx as any).run(sql`
+                    DELETE FROM playback_positions
+                    WHERE playlist_id = ${playlistId}
+                    AND (
+                        (content_type = 'vod' AND content_xtream_id IN (SELECT xtream_id FROM content WHERE id = ${contentId} AND type = 'vod'))
+                        OR
+                        (content_type = 'episode' AND series_xtream_id IN (SELECT xtream_id FROM content WHERE id = ${contentId} AND type = 'series'))
+                    )
+                `);
+            } catch {
+                // ignore
+            }
+        }
     });
 
     return { success: true };
@@ -215,6 +299,21 @@ export async function removeRecentItemsBatch(
             // callback, so the DELETE would silently do nothing. See the
             // matching note in favorites.operations.ts (issue #1137).
             stmt.run({ contentId, playlistId });
+            if (typeof (tx as any).run === 'function') {
+                try {
+                    (tx as any).run(sql`
+                        DELETE FROM playback_positions
+                        WHERE playlist_id = ${playlistId}
+                        AND (
+                            (content_type = 'vod' AND content_xtream_id IN (SELECT xtream_id FROM content WHERE id = ${contentId} AND type = 'vod'))
+                            OR
+                            (content_type = 'episode' AND series_xtream_id IN (SELECT xtream_id FROM content WHERE id = ${contentId} AND type = 'series'))
+                        )
+                    `);
+                } catch {
+                    // ignore
+                }
+            }
         }
     });
 

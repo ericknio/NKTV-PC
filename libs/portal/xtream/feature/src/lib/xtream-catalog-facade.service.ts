@@ -1,6 +1,8 @@
 import { Provider, Injectable, computed, inject } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
+import { announceActivityChange } from '@iptvnator/services/activity-changes';
 import {
+    isPortalPlaybackInProgress,
     PortalCatalogFacade,
     PortalCatalogItemProgress,
     PortalCatalogPlaylistMeta,
@@ -11,7 +13,7 @@ import {
     watchStateFromProgressPercent,
 } from '@iptvnator/portal/shared/util';
 import { createLogger } from '@iptvnator/portal/shared/util/logger';
-import { XtreamStore } from '@iptvnator/portal/xtream/data-access';
+import { XtreamStore, XTREAM_DATA_SOURCE } from '@iptvnator/portal/xtream/data-access';
 
 const SORT_STORAGE_KEY = 'xtream-category-sort-mode';
 
@@ -33,6 +35,7 @@ export class XtreamCatalogFacadeService implements PortalCatalogFacade<
     unknown
 > {
     private readonly xtreamStore = inject(XtreamStore);
+    private readonly dataSource = inject(XTREAM_DATA_SOURCE, { optional: true });
     private readonly translate = inject(TranslateService, { optional: true });
     private readonly logger = createLogger('XtreamCatalogFacade');
 
@@ -227,6 +230,65 @@ export class XtreamCatalogFacadeService implements PortalCatalogFacade<
 
         const categoryId = item['category_id'] ?? '0';
         return [String(categoryId), String(xtreamId)];
+    }
+
+    async clearContinueWatching(): Promise<void> {
+        const playlistId = this.xtreamStore.currentPlaylist()?.id;
+        if (!playlistId || !this.dataSource) {
+            return;
+        }
+
+        const type = this.contentType();
+        const positionsToClear: {
+            contentXtreamId: number;
+            contentType: 'vod' | 'episode';
+        }[] = [];
+
+        if (type === 'vod') {
+            const items = this.xtreamStore.continueWatchingVod();
+            for (const item of items) {
+                const id = Number(
+                    (item as any).stream_id ??
+                        (item as any).xtream_id ??
+                        (item as any).id
+                );
+                if (id) {
+                    positionsToClear.push({
+                        contentXtreamId: id,
+                        contentType: 'vod',
+                    });
+                }
+            }
+        } else if (type === 'series') {
+            const seriesMap = this.xtreamStore.seriesPositions();
+            const items = this.xtreamStore.continueWatchingSeries();
+            for (const item of items) {
+                const id = Number(
+                    (item as any).series_id ??
+                        (item as any).xtream_id ??
+                        (item as any).id
+                );
+                const rows = seriesMap.get(id) ?? [];
+                for (const row of rows) {
+                    if (isPortalPlaybackInProgress(row)) {
+                        positionsToClear.push({
+                            contentXtreamId: row.contentXtreamId,
+                            contentType: 'episode',
+                        });
+                    }
+                }
+            }
+        }
+
+        if (positionsToClear.length === 0) {
+            return;
+        }
+
+        await this.dataSource.clearPlaybackPositionsBatch(
+            playlistId,
+            positionsToClear
+        );
+        announceActivityChange();
     }
 
     getItemProgress(item: Record<string, unknown>): PortalCatalogItemProgress {

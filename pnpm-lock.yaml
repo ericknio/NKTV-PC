@@ -343,8 +343,8 @@ importers:
         specifier: 2.10.6
         version: 2.10.6(@babel/core@7.29.7)(preact@10.29.8)(rollup@4.59.0)(vite@8.3.5(patch_hash=30bf8b18a3a0b6d619c09e2a95f963c47639e91bb45111ba2912c9f741ba3526)(@types/node@20.19.9)(esbuild@0.28.2)(jiti@1.21.7)(less@4.5.1)(sass-embedded@1.104.1)(sass@1.104.1)(terser@5.49.2)(tsx@4.23.15)(yaml@2.9.1))
       '@rolldown/binding-win32-x64-msvc':
-        specifier: 1.2.16
-        version: 1.2.16
+        specifier: 1.2.15
+        version: 1.2.15
       '@schematics/angular':
         specifier: 22.2.5
         version: 22.2.5(chokidar@5.0.0)
@@ -430,8 +430,8 @@ importers:
         specifier: ^26.15.7
         version: 26.15.7(electron-builder-squirrel-windows@26.15.7)
       electron-playwright-helpers:
-        specifier: 1.8.2
-        version: 1.8.2
+        specifier: 3.1.2
+        version: 3.1.2
       esbuild:
         specifier: 0.28.2
         version: 0.28.2
@@ -5925,8 +5925,9 @@ packages:
     peerDependencies:
       electron: '>=15.0.0'
 
-  electron-playwright-helpers@1.8.2:
-    resolution: {integrity: sha512-sM9fDSEFDOptKDa8oiNphiXdR1KR1uFe8yHnlrnvyQE1ScnHizca/SoYvUdtn+5IuVNTkT8MesKWJ6seS4/zuA==}
+  electron-playwright-helpers@3.1.2:
+    resolution: {integrity: sha512-YQLbe5qglTHlcvKHUnetGfkk9buepcyLwbX2ALZlsps9GYtepj01BD7XoFe/YLuMy7HPejyV+2rwz/pehE5B6g==}
+    engines: {node: '>=22.12.0'}
 
   electron-publish@26.15.3:
     resolution: {integrity: sha512-g/2bn8YTavY4cuS5F+jOS7zmZbXXBV8KZ8yHKfJjFPoKtzBqrpCdNPxBd3tqdBwP7BVd0lGzf7Bk2s0KesWZ4Q==}
@@ -6638,6 +6639,9 @@ packages:
 
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
+
+  graceful-fs@4.2.12:
+    resolution: {integrity: sha512-iuyGF2E4oafQfPsRrG2wtY2ILupMhvtdrhzrxB+0VcjsPpSPttpfYdjnGFGsTi5MaJFjI1jOKHPQ6UTbTj9TAw==}
 
   h3@1.15.10:
     resolution: {integrity: sha512-YzJeWSkDZxAhvmp8dexjRK5hxziRO7I9m0N53WhvYL5NiWfkUkzssVzY9jvGu0HBoLFW6+duYmNSn6MaZBCCtg==}
@@ -8003,6 +8007,7 @@ packages:
 
   node-abort-controller@3.1.1:
     resolution: {integrity: sha512-AGK2yQKIjRuqnc6VkX2Xj5d+QW8xZ87pa1UK6yA6ouUyuxfHuMP6umE5QK7UmTeOAymo+Zx1Fxiuw9rVx8taHQ==}
+    deprecated: This package is no longer needed on supported Node.js versions. Node.js 16+ includes AbortController and AbortSignal as built-in globals. All Node.js versions requiring this polyfill are end-of-life. Use the built-in globals instead.
 
   node-addon-api@6.1.0:
     resolution: {integrity: sha512-+eawOlIgy680F0kBzPUNFhMZGtJ1YmqM6l4+Crf4IkImjYrO/mqPwRMh352g23uIaQKFItcQ64I7KMaJxHgAVA==}
@@ -9087,6 +9092,7 @@ packages:
 
   shaka-player@5.2.12:
     resolution: {integrity: sha512-vEsuVDI3+oLh+yqpjXexQZlg2XMUBI0VrqatDuKWacPaxAud6Uph5uCowUPLhUgNG5XKWCpoM4l1r8qYzWH+zg==}
+    engines: {node: '>=18'}
 
   shallow-clone@3.0.1:
     resolution: {integrity: sha512-/6KqX+GVUdqPuPPd2LxDDxzX6CAbjJehAAOKlNpqqUpAqPM6HeL8f+o3a+JsyGjn2lv0WY8UsTgUJjU9Ok55NA==}
@@ -13648,10 +13654,10 @@ snapshots:
   '@rolldown/binding-win32-arm64-msvc@1.2.16':
     optional: true
 
-  '@rolldown/binding-win32-x64-msvc@1.2.15':
-    optional: true
+  '@rolldown/binding-win32-x64-msvc@1.2.15': {}
 
-  '@rolldown/binding-win32-x64-msvc@1.2.16': {}
+  '@rolldown/binding-win32-x64-msvc@1.2.16':
+    optional: true
 
   '@rolldown/pluginutils@1.0.1': {}
 
@@ -15820,9 +15826,9 @@ snapshots:
       ajv: 8.20.0
       electron: 43.8.7
 
-  electron-playwright-helpers@1.8.2:
+  electron-playwright-helpers@3.1.2:
     dependencies:
-      '@electron/asar': 3.4.1
+      '@electron/asar': 4.3.1
 
   electron-publish@26.15.3:
     dependencies:
@@ -16603,14 +16609,14 @@ snapshots:
 
   fs-extra@11.4.1:
     dependencies:
-      graceful-fs: 4.2.11
+      graceful-fs: 4.2.12
       jsonfile: 6.2.1
       universalify: 2.0.1
     optional: true
 
   fs-extra@7.0.1:
     dependencies:
-      graceful-fs: 4.2.11
+      graceful-fs: 4.2.12
       jsonfile: 4.0.0
       universalify: 0.1.2
 
@@ -16805,6 +16811,8 @@ snapshots:
       responselike: 2.0.1
 
   graceful-fs@4.2.11: {}
+
+  graceful-fs@4.2.12: {}
 
   h3@1.15.10:
     dependencies:
@@ -17905,7 +17913,7 @@ snapshots:
       tslib: 2.9.1
     optionalDependencies:
       errno: 0.1.8
-      graceful-fs: 4.2.11
+      graceful-fs: 4.2.12
       image-size: 0.5.4
       make-dir: 2.1.0
       mime: 1.6.0

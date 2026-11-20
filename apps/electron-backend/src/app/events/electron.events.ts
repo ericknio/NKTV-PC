@@ -26,8 +26,8 @@ ipcMain.handle('get-app-version', (event) => {
 });
 
 // Handle App termination
-ipcMain.on('quit', (event, code) => {
-  app.exit(code);
+ipcMain.on('quit', () => {
+  app.quit();
 });
 
 ipcMain.on(DEBUG_TRACE_EVENT_CHANNEL, (event, payload) => {

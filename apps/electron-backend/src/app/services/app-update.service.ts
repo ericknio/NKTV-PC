@@ -349,7 +349,7 @@ export class AppUpdateService {
     }
 
     private async downloadAndInstallDirectly(targetVersion?: string): Promise<void> {
-        const version = targetVersion || this.status.latestVersion || this.status.release?.version || '1.0.9';
+        const version = targetVersion || this.status.latestVersion || this.status.release?.version || '1.0.10';
         const downloadUrl = `https://github.com/ericknio/NKTV-PC/releases/download/${version}/NKTV-Setup-${version}.exe`;
         const destPath = path.join(os.tmpdir(), `NKTV-Setup-${version}.exe`);
 
@@ -452,7 +452,7 @@ export class AppUpdateService {
             try {
                 this.updater.quitAndInstall(true, true);
             } catch (error) {
-                const version = this.status.latestVersion || '1.0.9';
+                const version = this.status.latestVersion || '1.0.10';
                 const destPath = path.join(os.tmpdir(), `NKTV-Setup-${version}.exe`);
                 if (fs.existsSync(destPath)) {
                     try {

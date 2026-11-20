@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { LazySnackBar } from '@iptvnator/services/lazy-snack-bar';
 import { TranslateService } from '@ngx-translate/core';
-import { BehaviorSubject, from, Observable, of } from 'rxjs';
+import { BehaviorSubject, from, Observable, of, Subscription } from 'rxjs';
 import { catchError, map, tap, timeout } from 'rxjs/operators';
 import {
     createDevLogger,
@@ -55,6 +55,7 @@ export class EpgService {
         });
     }
 
+    private channelProgramsSub?: Subscription;
     private epgAvailable = new BehaviorSubject<boolean>(false);
     private currentEpgPrograms = new BehaviorSubject<EpgProgram[]>([]);
 
@@ -167,7 +168,10 @@ export class EpgService {
             return;
         debugEpgService('Fetching EPG for channel ID:', channelId);
 
-        from(this.epgBridge.getChannelPrograms(channelId))
+        this.channelProgramsSub?.unsubscribe();
+        this.channelProgramsSub = from(
+            this.epgBridge.getChannelPrograms(channelId)
+        )
             .pipe(
                 this.sourceSettings.guard(),
                 this.epgPreferences.guard(),

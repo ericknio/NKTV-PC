@@ -3,6 +3,8 @@ import { Store } from '@ngrx/store';
 import { firstValueFrom } from 'rxjs';
 import { PlaylistsService } from '@iptvnator/services';
 import { PlaylistActions } from '@iptvnator/m3u-state';
+import { PlaylistRefreshActionService } from '@iptvnator/playlist/shared/ui';
+import { AppConfig } from '../../environments/environment';
 
 export const NKTV_DEFAULT_SERVER = 'http://nktv.site';
 export const NKTV_SERVER_URL_KEY = 'nktv_server_url';
@@ -93,7 +95,7 @@ export class NktvPanelSyncService {
                 device_id: deviceId,
                 model: 'Windows PC',
                 manufacturer: 'PC Desktop',
-                app_version: '1.0.2',
+                app_version: AppConfig.version,
                 android_version: osInfo,
             };
 
@@ -176,9 +178,6 @@ export class NktvPanelSyncService {
 
                 // Refresh content in background using new server URL
                 try {
-                    const { PlaylistRefreshActionService } = await import(
-                        '@iptvnator/playlist/shared/ui'
-                    );
                     const refreshAction = this.injector.get(
                         PlaylistRefreshActionService
                     );

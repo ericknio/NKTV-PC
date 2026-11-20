@@ -382,12 +382,12 @@ export class EpgRuntimeBridgeService {
         );
     }
 
-    onProgress(callback: (data: EpgImportProgress) => void): void {
+    onProgress(callback: (data: EpgImportProgress) => void): () => void {
         if (!this.supportsProgress) {
-            return;
+            return () => undefined;
         }
 
-        this.bridge?.onEpgProgress?.(callback);
+        return this.bridge?.onEpgProgress?.(callback) ?? (() => undefined);
     }
 
     private get bridge(): EpgElectronBridge | undefined {

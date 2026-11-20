@@ -99,3 +99,7 @@ vendor/embedded-mpv/*/runtime-manifest.json
 # MemPalace per-project files (issue #185)
 mempalace.yaml
 entities.json
+.agents/
+graphify-out/
+release_notes*.txt
+

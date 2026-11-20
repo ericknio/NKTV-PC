@@ -367,7 +367,12 @@ const electronApi: ElectronBridgeApi = {
     },
     // Player error listener
     onPlayerError: (callback: (data: ElectronBridgePlayerError) => void) => {
-        ipcRenderer.on('player-error', (_event, data) => callback(data));
+        const handler = (
+            _event: Electron.IpcRendererEvent,
+            data: ElectronBridgePlayerError
+        ) => callback(data);
+        ipcRenderer.on('player-error', handler);
+        return () => ipcRenderer.off('player-error', handler);
     },
     onPortalDebugEvent: (callback: (data: PortalDebugEvent) => void) => {
         const handler = (
@@ -379,7 +384,12 @@ const electronApi: ElectronBridgeApi = {
     },
     // EPG progress listener
     onEpgProgress: (callback: (data: ElectronBridgeEpgProgress) => void) => {
-        ipcRenderer.on('EPG_PROGRESS_UPDATE', (_event, data) => callback(data));
+        const handler = (
+            _event: Electron.IpcRendererEvent,
+            data: ElectronBridgeEpgProgress
+        ) => callback(data);
+        ipcRenderer.on('EPG_PROGRESS_UPDATE', handler);
+        return () => ipcRenderer.off('EPG_PROGRESS_UPDATE', handler);
     },
     // Playback position update listener - returns unsubscribe function
     onPlaybackPositionUpdate: (

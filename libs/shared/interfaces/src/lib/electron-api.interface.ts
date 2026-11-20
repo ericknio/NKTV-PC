@@ -1328,11 +1328,11 @@ export interface ElectronBridgeApi {
     ) => void;
     onPlayerError?: (
         callback: (data: ElectronBridgePlayerError) => void
-    ) => void;
+    ) => () => void;
     getLocalIpAddresses: () => Promise<string[]>;
     onEpgProgress?: (
         callback: (data: ElectronBridgeEpgProgress) => void
-    ) => void;
+    ) => () => void;
     onDbSaveContentProgress: (callback: (count: number) => void) => void;
     removeDbSaveContentProgress: () => void;
     onDbOperationEvent?: (

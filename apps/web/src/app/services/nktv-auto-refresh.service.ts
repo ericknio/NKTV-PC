@@ -1,5 +1,6 @@
 import { inject, Injectable, Injector } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { PlaylistRefreshActionService } from '@iptvnator/playlist/shared/ui';
 import { PlaylistsService } from '@iptvnator/services';
 
 export const NKTV_LAST_REFRESH_KEY = 'nktv_last_auto_refresh_timestamp';
@@ -75,9 +76,6 @@ export class NktvAutoRefreshService {
                 );
 
                 if (nktv) {
-                    const { PlaylistRefreshActionService } = await import(
-                        '@iptvnator/playlist/shared/ui'
-                    );
                     const refreshAction = this.injector.get(
                         PlaylistRefreshActionService
                     );
